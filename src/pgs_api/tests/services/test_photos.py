@@ -8,15 +8,14 @@ from pgs_api.services.photos import PhotosService
 
 
 @pytest.fixture
-def mock_db():
+def mock_db() -> Mock:
     return Mock(spec=AsyncSession)
 
 
 class TestPhotosService:
 
     @pytest.mark.asyncio
-    async def test_get_photo_by_id_success(self, mock_db) -> None:
-        # Arrange
+    async def test_get_photo_by_id_success(self, mock_db: Mock) -> None:
         photo_id = "photo123"
         mock_photo = Mock()
         mock_photo.id = photo_id
@@ -41,10 +40,8 @@ class TestPhotosService:
 
             service = PhotosService(mock_db)
 
-            # Act
             result = await service.get_photo_by_id(photo_id)
 
-            # Assert
             assert result is not None
             assert result["id"] == photo_id
             assert result["filename"] == "test.jpg"
@@ -67,8 +64,7 @@ class TestPhotosService:
             mock_photo.get_display_title.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_photo_by_id_not_found(self, mock_db) -> None:
-        # Arrange
+    async def test_get_photo_by_id_not_found(self, mock_db: Mock) -> None:
         photo_id = "nonexistent"
 
         with patch.object(PhotosRepository, "get_photo_by_id", new_callable=AsyncMock) as mock_get_photo:
@@ -76,16 +72,13 @@ class TestPhotosService:
 
             service = PhotosService(mock_db)
 
-            # Act
             result = await service.get_photo_by_id(photo_id)
 
-            # Assert
             assert result is None
             mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_success(self, mock_db) -> None:
-        # Arrange
+    async def test_get_photo_file_info_success(self, mock_db: Mock) -> None:
         photo_id = "photo123"
         test_path = "/photos/test.jpg"
 
@@ -100,10 +93,8 @@ class TestPhotosService:
             with patch("pathlib.Path.exists", return_value=True):
                 service = PhotosService(mock_db)
 
-                # Act
                 result = await service.get_photo_file_info(photo_id)
 
-                # Assert
                 assert result is not None
                 assert str(result["file_path"]) == test_path
                 assert result["media_type"] == "image/jpeg"
@@ -112,8 +103,7 @@ class TestPhotosService:
                 mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_photo_not_found(self, mock_db) -> None:
-        # Arrange
+    async def test_get_photo_file_info_photo_not_found(self, mock_db: Mock) -> None:
         photo_id = "nonexistent"
 
         with patch.object(PhotosRepository, "get_photo_by_id", new_callable=AsyncMock) as mock_get_photo:
@@ -121,16 +111,13 @@ class TestPhotosService:
 
             service = PhotosService(mock_db)
 
-            # Act
             result = await service.get_photo_file_info(photo_id)
 
-            # Assert
             assert result is None
             mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_file_not_exists(self, mock_db) -> None:
-        # Arrange
+    async def test_get_photo_file_info_file_not_exists(self, mock_db: Mock) -> None:
         photo_id = "photo123"
         test_path = "/photos/nonexistent.jpg"
 
@@ -145,17 +132,15 @@ class TestPhotosService:
             with patch("pathlib.Path.exists", return_value=False):
                 service = PhotosService(mock_db)
 
-                # Act
                 result = await service.get_photo_file_info(photo_id)
 
-                # Assert
                 assert result is None
                 mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_different_media_types(self, mock_db) -> None:
-        # Test different file extensions to verify media type mapping
-        test_cases = [
+    @pytest.mark.parametrize(
+        "extension, expected_media_type",
+        [
             (".jpg", "image/jpeg"),
             (".jpeg", "image/jpeg"),
             (".png", "image/png"),
@@ -164,38 +149,36 @@ class TestPhotosService:
             (".bmp", "image/bmp"),
             (".tiff", "image/tiff"),
             (".tif", "image/tiff"),
-            (".JPG", "image/jpeg"),  # Test case insensitive
-            (".PNG", "image/png"),  # Test case insensitive
+            (".JPG", "image/jpeg"),  # Test case-insensitive
+            (".PNG", "image/png"),  # Test case-insensitive
             (".xyz", "application/octet-stream"),  # Unknown extension
             ("", "application/octet-stream"),  # Empty extension
-        ]
+        ],
+    )
+    async def test_get_photo_file_info_different_media_types(
+        self, mock_db: Mock, extension: str, expected_media_type: str
+    ) -> None:
+        photo_id = f"photo_{extension}"
+        test_path = f"/photos/test{extension}"
 
-        for extension, expected_media_type in test_cases:
-            # Arrange
-            photo_id = f"photo_{extension}"
-            test_path = f"/photos/test{extension}"
+        mock_photo = Mock()
+        mock_photo.file_path = test_path
+        mock_photo.file_extension = extension
+        mock_photo.filename = f"test{extension}"
 
-            mock_photo = Mock()
-            mock_photo.file_path = test_path
-            mock_photo.file_extension = extension
-            mock_photo.filename = f"test{extension}"
+        with patch.object(PhotosRepository, "get_photo_by_id", new_callable=AsyncMock) as mock_get_photo:
+            mock_get_photo.return_value = mock_photo
 
-            with patch.object(PhotosRepository, "get_photo_by_id", new_callable=AsyncMock) as mock_get_photo:
-                mock_get_photo.return_value = mock_photo
+            with patch("pathlib.Path.exists", return_value=True):
+                service = PhotosService(mock_db)
 
-                with patch("pathlib.Path.exists", return_value=True):
-                    service = PhotosService(mock_db)
+                result = await service.get_photo_file_info(photo_id)
 
-                    # Act
-                    result = await service.get_photo_file_info(photo_id)
-
-                    # Assert
-                    assert result is not None
-                    assert result["media_type"] == expected_media_type
+                assert result is not None
+                assert result["media_type"] == expected_media_type
 
     @pytest.mark.asyncio
-    async def test_file_size_mb_rounding(self, mock_db) -> None:
-        # Arrange
+    async def test_file_size_mb_rounding(self, mock_db: Mock) -> None:
         photo_id = "photo123"
         mock_photo = Mock()
         mock_photo.id = photo_id
@@ -220,10 +203,8 @@ class TestPhotosService:
 
             service = PhotosService(mock_db)
 
-            # Act
             result = await service.get_photo_by_id(photo_id)
 
-            # Assert
             assert result is not None
             assert result["file_size_mb"] == 2.57  # Should be rounded to 2 decimal places
             mock_get_photo.assert_called_once_with(photo_id)

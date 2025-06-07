@@ -80,7 +80,6 @@ class DatabaseManager:
             raise RuntimeError("Database not initialized. Call initialize() first.")
         return self._session_factory
 
-    @asynccontextmanager
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Get a database session with automatic cleanup."""
         if self._session_factory is None:
@@ -108,7 +107,7 @@ class DatabaseManager:
     async def health_check(self) -> dict[str, Any]:
         """Check database connectivity and return status."""
         try:
-            async with self.get_session() as session:
+            async with self.session_factory() as session:
                 result = await session.execute(text("SELECT 1"))
                 result.scalar()
                 return {

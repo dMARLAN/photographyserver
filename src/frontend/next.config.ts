@@ -66,8 +66,8 @@ const nextConfig: NextConfig = {
       },
       // Direct backend health check
       {
-        source: '/health',
-        destination: `${apiUrl}/health`,
+        source: '/healthcheck',
+        destination: `${apiUrl}/healthcheck`,
       },
       // Image serving from backend
       {

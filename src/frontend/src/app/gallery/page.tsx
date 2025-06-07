@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { CategoryCard, CategoryCardSkeleton, CategoryGrid } from '@/components/custom/CategoryCard';
+import { RefreshButton } from '@/components/custom/RefreshButton';
 import { getCategories } from '@/lib/api';
 import { createHeadingClasses, createContainerClasses } from '@/lib/utils';
 import { ArrowLeft, Camera } from 'lucide-react';
@@ -147,12 +148,7 @@ function GalleryErrorState() {
       </div>
       
       <div className="flex items-center justify-center space-x-4">
-        <Button 
-          onClick={() => window.location.reload()}
-          variant="default"
-        >
-          Try Again
-        </Button>
+        <RefreshButton />
         <Link href="/">
           <Button variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -163,6 +159,7 @@ function GalleryErrorState() {
     </div>
   );
 }
+
 
 function GalleryLoadingSkeleton() {
   const headingClasses = createHeadingClasses({

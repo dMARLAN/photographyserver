@@ -1,6 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
+import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from pgs_api.config import api_config
 from pgs_api.routes import photos, categories, sync
+from pgs_api.types.healthcheck import HealthCheck, DBStatus, APIStatus
 from pgs_db.database import db_manager
 
 # Configure logging
@@ -18,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and shutdown tasks."""
     logger.info("Starting Photography Server API")
 
@@ -64,21 +67,22 @@ def create_app() -> FastAPI:
 
     # Global exception handler
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
+    async def global_exception_handler(_: Request, exc: Exception) -> JSONResponse:
         logger.error(f"Unhandled exception: {exc}", exc_info=True)
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
     # Health check endpoint
-    @app.get("/health")
-    async def health_check():
+    @app.get("/healthcheck")
+    async def health_check() -> HealthCheck:
         """Health check endpoint to verify API and database connectivity."""
         db_health = await db_manager.health_check()
-        return {
-            "status": "healthy" if db_health["status"] == "healthy" else "unhealthy",
-            "api": {"version": api_config.version, "environment": api_config.environment},
-            "database": db_health,
-            "storage": {"path": str(api_config.storage_path.absolute()), "exists": api_config.storage_path.exists()},
-        }
+        return HealthCheck(
+            db_status=DBStatus.HEALTHY if db_health["status"] == "healthy" else DBStatus.UNHEALTHY,
+            api_status=APIStatus(
+                version=api_config.version,
+                environment=api_config.environment,
+            ),
+        )
 
     # Include API routes with versioning
     include_api_routes(app)
@@ -99,8 +103,6 @@ def include_api_routes(app: FastAPI) -> None:
 app = create_app()
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(
         "main:app",
         host=api_config.host,

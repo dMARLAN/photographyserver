@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pgs_api.routes import photos as photos_module
-from pgs_api.routes.photos import get_photo_metadata, serve_photo_file
+from pgs_api.routes.photos import get_photo_metadata, serve_photo_file_info
 from pgs_api.services.photos import PhotosService
 
 
@@ -75,9 +75,9 @@ class TestServePhotoFile:
 
         with (
             patch.object(photos_module, "PhotosService", return_value=mock_photos_service),
-            patch.object(Path, "exists", return_value=True)
+            patch.object(Path, "exists", return_value=True),
         ):
-            result = await serve_photo_file(photo_id, mock_db)
+            result = await serve_photo_file_info(photo_id, mock_db)
 
             assert isinstance(result, FileResponse)
             mock_photos_service.get_photo_file_info.assert_called_once_with(photo_id)
@@ -89,7 +89,7 @@ class TestServePhotoFile:
 
         with patch.object(photos_module, "PhotosService", return_value=mock_photos_service):
             with pytest.raises(HTTPException) as exc_info:
-                await serve_photo_file(photo_id, mock_db)
+                await serve_photo_file_info(photo_id, mock_db)
 
             assert exc_info.value.status_code == 404
             assert exc_info.value.detail == "Photo not found"
@@ -104,10 +104,10 @@ class TestServePhotoFile:
 
         with (
             patch.object(photos_module, "PhotosService", return_value=mock_photos_service),
-            patch.object(Path, "exists", return_value=False)
+            patch.object(Path, "exists", return_value=False),
         ):
             with pytest.raises(HTTPException) as exc_info:
-                await serve_photo_file(photo_id, mock_db)
+                await serve_photo_file_info(photo_id, mock_db)
 
             assert exc_info.value.status_code == 404
             assert exc_info.value.detail == "Photo file not found on disk"

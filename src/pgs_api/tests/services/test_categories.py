@@ -8,13 +8,13 @@ from pgs_api.services.categories import CategoriesService
 
 
 @pytest.fixture
-def mock_db():
+def mock_db() -> Mock:
     return Mock(spec=AsyncSession)
 
 
 class TestCategoriesService:
     @pytest.mark.asyncio
-    async def test_list_categories_success(self, mock_db) -> None:
+    async def test_list_categories_success(self, mock_db: Mock) -> None:
         with patch.object(CategoriesRepository, "get_categories_with_stats", new_callable=AsyncMock) as mock_get_stats:
             mock_get_stats.return_value = [
                 ("nature", 5, "2024-01-01T00:00:00"),
@@ -33,7 +33,7 @@ class TestCategoriesService:
             mock_get_stats.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_list_categories_empty(self, mock_db) -> None:
+    async def test_list_categories_empty(self, mock_db: Mock) -> None:
         with patch.object(CategoriesRepository, "get_categories_with_stats", new_callable=AsyncMock) as mock_get_stats:
             mock_get_stats.return_value = []
 
@@ -45,7 +45,7 @@ class TestCategoriesService:
             mock_get_stats.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_success(self, mock_db) -> None:
+    async def test_get_photos_in_category_success(self, mock_db: Mock) -> None:
         category = "nature"
         mock_photo = Mock()
         mock_photo.id = "photo1"
@@ -85,7 +85,7 @@ class TestCategoriesService:
             mock_photo.get_display_title.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_not_found(self, mock_db) -> None:
+    async def test_get_photos_in_category_not_found(self, mock_db: Mock) -> None:
         category = "nonexistent"
 
         with patch.object(CategoriesRepository, "get_photos_by_category", new_callable=AsyncMock) as mock_get_photos:
@@ -99,7 +99,7 @@ class TestCategoriesService:
             mock_get_photos.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_empty_list(self, mock_db) -> None:
+    async def test_get_photos_in_category_empty_list(self, mock_db: Mock) -> None:
         category = "empty"
 
         with patch.object(CategoriesRepository, "get_photos_by_category", new_callable=AsyncMock) as mock_get_photos:
@@ -113,7 +113,7 @@ class TestCategoriesService:
             mock_get_photos.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_multiple_photos(self, mock_db) -> None:
+    async def test_get_photos_in_category_multiple_photos(self, mock_db: Mock) -> None:
         category = "nature"
 
         mock_photo1 = Mock()

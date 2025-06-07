@@ -1,20 +1,20 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from starlette.status import HTTP_200_OK
 
-from pgs_api.services.sync import SyncService
+from pgs_api.services.sync import SyncService, SyncStats
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sync", tags=["sync"])
 
 
-@router.post("")
-async def sync_photos():
+@router.post("", response_model=SyncStats, status_code=HTTP_200_OK)
+async def sync_photos(sync_service: SyncService = Depends(SyncService)) -> SyncStats:
     """Scan filesystem and update database with photo metadata."""
     try:
-        result = await SyncService.sync_photos()
-        return result
+        return await sync_service.sync_photos()
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

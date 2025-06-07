@@ -1,70 +1,54 @@
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Final
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 
+from pgs_api.models import Photo
 from pgs_api.repositories.photos import PhotosRepository
 
 
+@dataclass(frozen=True)
+class PhotoFileInfo:
+    """Photo file information for serving the file."""
+
+    file_path: Path
+    media_type: str
+    filename: str
+
+
 class PhotosService:
-    def __init__(self, db: AsyncSession) -> None:
-        self._repository = PhotosRepository(db)
+    __MEDIA_TYPE_MAP: Final[dict[str, str]] = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+        ".bmp": "image/bmp",
+        ".tiff": "image/tiff",
+        ".tif": "image/tiff",
+    }
 
-    @staticmethod
-    def __get_media_type(file_extension: str) -> str:
-        """Get media type based on file extension."""
-        media_type_map = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".webp": "image/webp",
-            ".gif": "image/gif",
-            ".bmp": "image/bmp",
-            ".tiff": "image/tiff",
-            ".tif": "image/tiff",
-        }
-        return media_type_map.get(file_extension.lower(), "application/octet-stream")
+    def __init__(self, photos_repository: PhotosRepository = Depends(PhotosRepository)) -> None:
+        self.__repository = photos_repository
 
-    async def get_photo_by_id(self, photo_id: str):
+    async def get_photo_by_id(self, photo_id: str) -> Photo | None:
         """Get photo metadata by ID."""
-        photo = await self._repository.get_photo_by_id(photo_id)
+        if photo := await self.__repository.get_photo_by_id(photo_id):
+            return Photo.model_validate(photo)
+        return None
 
-        if not photo:
-            return None
-
-        return {
-            "id": photo.id,
-            "filename": photo.filename,
-            "title": photo.get_display_title(),
-            "category": photo.category,
-            "file_path": photo.file_path,
-            "width": photo.width,
-            "height": photo.height,
-            "aspect_ratio": photo.aspect_ratio,
-            "orientation": photo.orientation,
-            "megapixels": photo.megapixels,
-            "file_size": photo.file_size,
-            "file_size_mb": round(photo.file_size_mb, 2),
-            "file_extension": photo.file_extension,
-            "created_at": photo.created_at,
-            "updated_at": photo.updated_at,
-            "file_modified_at": photo.file_modified_at,
-        }
-
-    async def get_photo_file_info(self, photo_id: str):
+    async def get_photo_file_info(self, photo_id: str) -> PhotoFileInfo | None:
         """Get photo file information for serving the file."""
-        photo = await self._repository.get_photo_by_id(photo_id)
+        if photo := await self.__repository.get_photo_by_id(photo_id):
+            photo = Photo.model_validate(photo)
 
-        if not photo:
-            return None
+            if not photo.file_path:
+                return None
 
-        file_path = Path(photo.file_path)
-        if not file_path.exists():
-            return None
-
-        media_type = self.__get_media_type(photo.file_extension)
-
-        return {
-            "file_path": file_path,
-            "media_type": media_type,
-            "filename": photo.filename,
-        }
+            return PhotoFileInfo(
+                file_path=photo.file_path,
+                media_type=self.__MEDIA_TYPE_MAP.get(photo.file_extension.lower(), "application/octet-stream"),
+                filename=photo.filename,
+            )
+        return None

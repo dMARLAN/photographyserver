@@ -131,7 +131,7 @@ def generate_title_from_filename(filename: str) -> str:
     return name
 
 
-def is_supported_image_file(file_path: Path) -> bool:
+def __is_supported_image_file(file_path: Path) -> bool:
     """Check if a file is a supported image format.
 
     Args:
@@ -143,7 +143,7 @@ def is_supported_image_file(file_path: Path) -> bool:
     return file_path.suffix.lower() in SUPPORTED_EXTENSIONS
 
 
-async def get_existing_photos_by_path(session: AsyncSession) -> dict[str, Photo]:
+async def __get_existing_photos_by_path(session: AsyncSession) -> dict[str, Photo]:
     """Get all existing photos indexed by their file path.
 
     Args:
@@ -193,7 +193,7 @@ async def sync_filesystem_to_db(storage_path: Path | str | None = None) -> SyncS
 
     async with db_manager.get_session() as session:
         # Get existing photos to compare against
-        existing_photos = await get_existing_photos_by_path(session)
+        existing_photos = await __get_existing_photos_by_path(session)
         found_file_paths = set()
 
         # Scan storage directory
@@ -206,7 +206,7 @@ async def sync_filesystem_to_db(storage_path: Path | str | None = None) -> SyncS
 
             # Scan all image files in the category directory
             for image_file in category_dir.iterdir():
-                if not image_file.is_file() or not is_supported_image_file(image_file):
+                if not image_file.is_file() or not __is_supported_image_file(image_file):
                     continue
 
                 file_path_str = str(image_file.resolve())
@@ -283,80 +283,6 @@ async def sync_filesystem_to_db(storage_path: Path | str | None = None) -> SyncS
     )
 
     return stats
-
-
-async def sync_single_file(file_path: Path | str, category: str | None = None) -> bool:
-    """Sync a single file to the database.
-
-    Args:
-        file_path: Path to the image file
-        category: Category for the photo (if None, derived from parent directory)
-
-    Returns:
-        True if sync was successful, False otherwise
-    """
-    file_path = Path(file_path)
-
-    if not file_path.exists():
-        logger.error(f"File not found: {file_path}")
-        return False
-
-    if not is_supported_image_file(file_path):
-        logger.error(f"Unsupported file format: {file_path}")
-        return False
-
-    if category is None:
-        category = file_path.parent.name
-
-    try:
-        async with db_manager.get_session() as session:
-            file_path_str = str(file_path.resolve())
-
-            # Check if a photo already exists
-            result = await session.execute(select(Photo).where(Photo.file_path == file_path_str))
-            existing_photo = result.scalar_one_or_none()
-
-            # Extract metadata
-            metadata = extract_image_metadata(file_path)
-
-            if existing_photo is None:
-                # Add a new photo
-                title = generate_title_from_filename(file_path.name)
-
-                new_photo = Photo(
-                    filename=file_path.name,
-                    file_path=file_path_str,
-                    category=category,
-                    title=title,
-                    file_size=metadata.file_size,
-                    width=metadata.width,
-                    height=metadata.height,
-                    file_modified_at=metadata.file_modified_at,
-                )
-
-                session.add(new_photo)
-                logger.info(f"Added new photo: {file_path.name}")
-
-            else:
-                # Update an existing photo if modified
-                if existing_photo.file_modified_at != metadata.file_modified_at:
-                    existing_photo.filename = file_path.name
-                    existing_photo.category = category
-                    existing_photo.file_size = metadata.file_size
-                    existing_photo.width = metadata.width
-                    existing_photo.height = metadata.height
-                    existing_photo.file_modified_at = metadata.file_modified_at
-
-                    logger.info(f"Updated photo: {file_path.name}")
-                else:
-                    logger.debug(f"Photo unchanged: {file_path.name}")
-
-            await session.commit()
-            return True
-
-    except Exception as e:
-        logger.error(f"Error syncing file {file_path}: {e}")
-        return False
 
 
 async def remove_orphaned_photos() -> int:

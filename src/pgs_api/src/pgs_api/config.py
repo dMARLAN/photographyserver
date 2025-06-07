@@ -50,3 +50,8 @@ class APIConfig(BaseSettings):
 
 # Global configuration instance
 api_config = APIConfig()
+
+
+def get_api_config() -> APIConfig:
+    """Get the API configuration instance."""
+    return api_config

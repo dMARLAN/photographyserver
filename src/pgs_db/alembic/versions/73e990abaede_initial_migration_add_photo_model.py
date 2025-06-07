@@ -20,7 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Create photos table
     op.create_table(
         "photos",
         sa.Column("id", sa.String(), nullable=False),
@@ -41,5 +40,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # Drop photos table
     op.drop_table("photos")

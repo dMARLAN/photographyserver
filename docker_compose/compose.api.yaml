@@ -22,3 +22,18 @@ services:
         condition: service_healthy
     command: [ "uv", "run", "run.py" ]
     working_dir: /app/src/pgs_api
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/healthcheck" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    develop:
+      watch:
+        - action: sync
+          path: ../src/pgs_api/src
+          target: /app/src/pgs_api/src
+        - action: sync
+          path: ../src/pgs_db/src
+          target: /app/src/pgs_db/src
+        - action: rebuild
+          path: ../src/pgs_api/pyproject.toml

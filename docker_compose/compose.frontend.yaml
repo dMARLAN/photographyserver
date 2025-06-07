@@ -15,3 +15,17 @@ services:
     depends_on:
       - api
     command: [ "npm", "run", "dev" ]
+    develop:
+      watch:
+        - action: sync
+          path: ../src/frontend/src
+          target: /app/src
+        - action: sync
+          path: ../src/frontend/public
+          target: /app/public
+        - action: rebuild
+          path: ../src/frontend/package.json
+        - action: rebuild
+          path: ../src/frontend/package-lock.json
+        - action: rebuild
+          path: ../src/frontend/next.config.ts

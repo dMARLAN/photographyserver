@@ -10,11 +10,14 @@ ci
 build:
 	$(DOCKER_COMPOSE_CMD) build
 
-up:
+up: build
 	$(DOCKER_COMPOSE_CMD) up
 
-up-dev:
+up-dev: build
 	$(DOCKER_COMPOSE_CMD) up --watch
+
+up-no-frontend: build
+	$(DOCKER_COMPOSE_CMD) --exclude="compose.frontend.yaml" up --watch
 
 down:
 	$(DOCKER_COMPOSE_CMD) down

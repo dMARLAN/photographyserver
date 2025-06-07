@@ -34,6 +34,7 @@
 - Always use Pathlib for file and directory operations instead of os.path.
 - Prefer importing specific functions or classes from modules instead of importing the entire module.
     - For example, use `from module import function` instead of `import module`.
+- Use `Final` type-hint for constants and immutable variables.
 
 # Bash
 
