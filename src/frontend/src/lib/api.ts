@@ -1,6 +1,6 @@
 // API Integration Utilities for Photography Gallery
 
-import type {ApiError, Category, Photo} from '@/types/gallery';
+import type {ApiError, Category, Photo, PaginationMeta} from '@/types/gallery';
 
 // Base API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -60,7 +60,7 @@ export async function getCategory(slug: string): Promise<Category> {
 export async function getPhotosByCategory(
   categorySlug: string,
   params?: { page?: number; limit?: number }
-): Promise<{data: Photo[], meta?: any}> {
+): Promise<{data: Photo[], meta?: PaginationMeta}> {
   const response = await apiRequest<Photo[]>(`/categories/${categorySlug}`);
   // Transform to match expected structure with pagination meta
   return {

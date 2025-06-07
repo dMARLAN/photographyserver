@@ -43,12 +43,13 @@ class PhotosService:
         if photo := await self.__repository.get_photo_by_id(photo_id):
             photo = Photo.model_validate(photo)
 
-            if not photo.file_path:
+            if not photo.file_path or str(photo.file_path) == ".":
                 return None
 
+            file_extension = Path(photo.filename).suffix.lower()
             return PhotoFileInfo(
                 file_path=photo.file_path,
-                media_type=self.__MEDIA_TYPE_MAP.get(photo.file_extension.lower(), "application/octet-stream"),
+                media_type=self.__MEDIA_TYPE_MAP.get(file_extension, "application/octet-stream"),
                 filename=photo.filename,
             )
         return None

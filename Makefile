@@ -25,13 +25,19 @@ down:
 
 ### Validation targets
 validate-api:
+	@echo "### Validating API..."
 	cd src/pgs_api && uv run make ci
+	@echo "### API validation completed successfully\n"
 
 validate-db:
+	@echo "### Validating Database..."
 	cd src/pgs_db && uv run make ci
+	@echo "### Database validation completed successfully\n"
 
 validate-frontend:
+	@echo "### Validating Frontend..."
 	cd src/frontend && npm run lint
+	@echo "### Frontend validation completed successfully\n"
 
 
 ### Formatting targets
