@@ -13,7 +13,7 @@ pyright-check:
 	uv run pyright
 
 unit-tests:
-	uv run pytest
+	uv run python -B -m pytest
 
 ci: format-diff ruff-check pyright-check unit-tests
 	@echo "Done"

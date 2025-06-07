@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pgs_db.config import db_config
 
 
@@ -43,10 +42,7 @@ class APIConfig(BaseSettings):
     # Security settings (for future expansion)
     secret_key: str = "change-this-in-production"
 
-    model_config = ConfigDict(
-        env_prefix="API_",
-        case_sensitive=False
-    )
+    model_config = SettingsConfigDict(env_prefix="API_", case_sensitive=False)
 
     @property
     def storage_path(self) -> Path:

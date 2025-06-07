@@ -8,7 +8,8 @@ mirrors the source code.
 - Test files should be named `test_<module_name>.py`
 - Test functions should be named `test_<what_is_being_tested>_<expected_outcome>`
 - Tests should be organized in a way that reflects the structure of the codebase, using subdirectories as needed.
-- Tests should be placed in the relevant subdirectory of the `tests/` directory, mirroring the structure of the source code.
+- Tests should be placed in the relevant subdirectory of the `tests/` directory, mirroring the structure of the source
+  code.
 
 ## Core Testing Principles
 
@@ -112,25 +113,42 @@ def test_invalid_user_id():
 
 ### 4. Mocking
 
-Mock external dependencies to isolate the unit being tested. **Prefer `patch.object()` over string-based patching** for
-better refactoring support and type safety:
+Mock external dependencies to isolate the unit being tested. **Always use `with patch.object(foo, "bar"): ...` pattern**
+for
+better refactoring support, type safety, and automatic cleanup:
 
 ```python
-# Preferred - Using patch.object()
-def test_send_email_with_object_patch(mocker):
+# Preferred - Using with patch.object() context manager
+def test_send_email_with_context_manager():
+    from unittest.mock import patch
     from email_service import smtp
-    mock_send = mocker.patch.object(smtp, 'send')
 
-    send_welcome_email("user@example.com")
+    with patch.object(smtp, 'send') as mock_send:
+        send_welcome_email("user@example.com")
 
-    mock_send.assert_called_once_with(
-        to="user@example.com",
-        subject="Welcome!",
-        body=mocker.ANY
-    )
+        mock_send.assert_called_once_with(
+            to="user@example.com",
+            subject="Welcome!",
+            body=ANY
+        )
 
 
-# Alternative - String-based patching (use when patch.object isn't feasible)
+# For async methods
+@pytest.mark.asyncio
+async def test_async_operation():
+    from unittest.mock import patch, AsyncMock
+    from service import external_api
+
+    with patch.object(external_api, 'fetch_data', new_callable=AsyncMock) as mock_fetch:
+        mock_fetch.return_value = {"status": "success"}
+
+        result = await process_data()
+
+        assert result["processed"] == True
+        mock_fetch.assert_called_once()
+
+
+# Avoid - String-based patching (use only when patch.object isn't feasible)
 def test_send_email_with_string_patch(mocker):
     mock_smtp = mocker.patch("email_service.smtp.send")
 
@@ -142,6 +160,14 @@ def test_send_email_with_string_patch(mocker):
         body=mocker.ANY
     )
 ```
+
+**Benefits of `with patch.object()`:**
+
+- Automatic cleanup when exiting the context
+- Better IDE support and refactoring safety
+- Clear scope of the mock
+- Type checking support
+- Less error-prone than string-based patching
 
 ## Async Testing
 
@@ -236,17 +262,21 @@ from your_module import YourClass, YourError
 def instance(self):
     return YourClass()
 
+
 def test_initialization(self):
     obj = YourClass(name="test")
     assert obj.name == "test"
+
 
 def test_method_with_valid_input(self, instance):
     result = instance.process("valid")
     assert result == "expected"
 
+
 def test_method_with_invalid_input(self, instance):
     with pytest.raises(YourError):
         instance.process(None)
+
 
 @pytest.mark.parametrize("input_val,expected", [
     ("a", 1),
