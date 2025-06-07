@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from pgs_db.config import db_config
 
@@ -42,14 +43,15 @@ class APIConfig(BaseSettings):
     # Security settings (for future expansion)
     secret_key: str = "change-this-in-production"
 
+    model_config = ConfigDict(
+        env_prefix="API_",
+        case_sensitive=False
+    )
+
     @property
     def storage_path(self) -> Path:
         """Get the photos storage path from database configuration."""
         return db_config.photos_base_path
-
-    class Config:
-        env_prefix = "API_"
-        case_sensitive = False
 
 
 # Global configuration instance

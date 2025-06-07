@@ -48,7 +48,7 @@ format-all: format-api format-db
 	@echo "All code formatted successfully"
 
 format-all-diff: format-api-diff format-db-diff
-	@echo "All code differences formatted successfully"
+	@echo "All code formatting checked"
 
 
 ### Continuous Integration target

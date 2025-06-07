@@ -1,4 +1,4 @@
-.PHONY: format format-diff ruff-check pyright-check ci
+.PHONY: format format-diff ruff-check pyright-check unit-tests ci
 
 format:
 	../../scripts/format.sh .
@@ -12,5 +12,8 @@ ruff-check:
 pyright-check:
 	uv run pyright
 
-ci: format-diff ruff-check pyright-check
+unit-tests:
+	uv run pytest
+
+ci: format-diff ruff-check pyright-check unit-tests
 	@echo "Done"

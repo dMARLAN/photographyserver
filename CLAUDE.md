@@ -10,7 +10,7 @@
 # Frontend
 
 - When adding new components, prefer using shadcn for components
-- To add shadcn components correctly, use `npx shadcn-ui@latest add` command from the frontend directory
+- To add shadcn components correctly, use `npx shadcn@latest add` command from the frontend directory
 
 # Python
 
@@ -31,6 +31,8 @@
 - `@staticmethod` should be used for methods that do not require access to the instance or class.
 - `@classmethod` should be used for methods that require access to the class but not the instance.
 - Always use Pathlib for file and directory operations instead of os.path.
+- Prefer importing specific functions or classes from modules instead of importing the entire module.
+  - For example, use `from module import function` instead of `import module`.
 
 # Bash
 
