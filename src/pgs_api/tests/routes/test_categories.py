@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -10,50 +10,44 @@ from pgs_api.services.categories import CategoriesService
 
 
 @pytest.fixture
-def mock_db(mocker):
-    return mocker.Mock(spec=AsyncSession)
+def mock_db() -> Mock:
+    return Mock(spec=AsyncSession)
 
 
 @pytest.fixture
-def mock_categories_service(mocker):
-    return mocker.Mock(spec=CategoriesService)
+def mock_categories_service() -> Mock:
+    return Mock(spec=CategoriesService)
 
 
 class TestListCategories:
     @pytest.mark.asyncio
-    async def test_list_categories_success(self, mock_db, mock_categories_service, mocker) -> None:
-        # Arrange
+    async def test_list_categories_success(self, mock_db: Mock, mock_categories_service: Mock) -> None:
         expected_categories = [
             {"name": "nature", "photo_count": 5, "latest_photo": "2024-01-01T00:00:00"},
             {"name": "portraits", "photo_count": 3, "latest_photo": "2024-01-02T00:00:00"},
         ]
         mock_categories_service.list_categories = AsyncMock(return_value=expected_categories)
-        mocker.patch.object(categories_module, "CategoriesService", return_value=mock_categories_service)
 
-        # Act
-        result = await list_categories(mock_db)
+        with patch.object(categories_module, "CategoriesService", return_value=mock_categories_service):
+            result = await list_categories(mock_db)
 
-        # Assert
-        assert result == {"categories": expected_categories}
-        mock_categories_service.list_categories.assert_called_once()
+            assert result == {"categories": expected_categories}
+            mock_categories_service.list_categories.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_list_categories_empty(self, mock_db, mock_categories_service, mocker) -> None:
-        # Arrange
+    async def test_list_categories_empty(self, mock_db: Mock, mock_categories_service: Mock) -> None:
         mock_categories_service.list_categories = AsyncMock(return_value=[])
-        mocker.patch.object(categories_module, "CategoriesService", return_value=mock_categories_service)
 
-        # Act
-        result = await list_categories(mock_db)
+        with patch.object(categories_module, "CategoriesService", return_value=mock_categories_service):
+            result = await list_categories(mock_db)
 
-        # Assert
-        assert result == {"categories": []}
-        mock_categories_service.list_categories.assert_called_once()
+            assert result == {"categories": []}
+            mock_categories_service.list_categories.assert_called_once()
 
 
 class TestListPhotosInCategory:
     @pytest.mark.asyncio
-    async def test_list_photos_in_category_success(self, mock_db, mock_categories_service, mocker) -> None:
+    async def test_list_photos_in_category_success(self, mock_db: Mock, mock_categories_service: Mock) -> None:
         category = "nature"
         expected_photos = [
             {
@@ -71,42 +65,36 @@ class TestListPhotosInCategory:
             }
         ]
 
-        # Arrange
         mock_categories_service.get_photos_in_category = AsyncMock(return_value=expected_photos)
-        mocker.patch.object(categories_module, "CategoriesService", return_value=mock_categories_service)
 
-        # Act
-        result = await list_photos_in_category(category, mock_db)
+        with patch.object(categories_module, "CategoriesService", return_value=mock_categories_service):
+            result = await list_photos_in_category(category, mock_db)
 
-        assert result == {"category": category, "photos": expected_photos}
-        mock_categories_service.get_photos_in_category.assert_called_once_with(category)
+            assert result == {"category": category, "photos": expected_photos}
+            mock_categories_service.get_photos_in_category.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_list_photos_in_category_not_found(self, mock_db, mock_categories_service, mocker) -> None:
+    async def test_list_photos_in_category_not_found(self, mock_db: Mock, mock_categories_service: Mock) -> None:
         category = "nonexistent"
-        # Arrange
         mock_categories_service.get_photos_in_category = AsyncMock(return_value=None)
-        mocker.patch.object(categories_module, "CategoriesService", return_value=mock_categories_service)
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
-            await list_photos_in_category(category, mock_db)
+        with patch.object(categories_module, "CategoriesService", return_value=mock_categories_service):
+            with pytest.raises(HTTPException) as exc_info:
+                await list_photos_in_category(category, mock_db)
 
-        assert exc_info.value.status_code == 404
-        assert f"Category '{category}' not found or empty" in str(exc_info.value.detail)
-        mock_categories_service.get_photos_in_category.assert_called_once_with(category)
+            assert exc_info.value.status_code == 404
+            assert f"Category '{category}' not found or empty" in str(exc_info.value.detail)
+            mock_categories_service.get_photos_in_category.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_list_photos_in_category_empty(self, mock_db, mock_categories_service, mocker) -> None:
+    async def test_list_photos_in_category_empty(self, mock_db: Mock, mock_categories_service: Mock) -> None:
         category = "empty_category"
-        # Arrange
         mock_categories_service.get_photos_in_category = AsyncMock(return_value=[])
-        mocker.patch.object(categories_module, "CategoriesService", return_value=mock_categories_service)
 
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
-            await list_photos_in_category(category, mock_db)
+        with patch.object(categories_module, "CategoriesService", return_value=mock_categories_service):
+            with pytest.raises(HTTPException) as exc_info:
+                await list_photos_in_category(category, mock_db)
 
-        assert exc_info.value.status_code == 404
-        assert f"Category '{category}' not found or empty" in str(exc_info.value.detail)
-        mock_categories_service.get_photos_in_category.assert_called_once_with(category)
+            assert exc_info.value.status_code == 404
+            assert f"Category '{category}' not found or empty" in str(exc_info.value.detail)
+            mock_categories_service.get_photos_in_category.assert_called_once_with(category)

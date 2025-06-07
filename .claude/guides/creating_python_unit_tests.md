@@ -15,7 +15,7 @@ mirrors the source code.
 
 ### 1. Arrange-Act-Assert (AAA) Pattern
 
-Structure each test with clear sections:
+Structure each test with clear sections (don't use comments, just follow the pattern):
 
 ```python
 def test_user_creation():
@@ -114,15 +114,11 @@ def test_invalid_user_id():
 ### 4. Mocking
 
 Mock external dependencies to isolate the unit being tested. **Always use `with patch.object(foo, "bar"): ...` pattern**
-for
-better refactoring support, type safety, and automatic cleanup:
+for better refactoring support, type safety, and automatic cleanup:
 
 ```python
 # Preferred - Using with patch.object() context manager
 def test_send_email_with_context_manager():
-    from unittest.mock import patch
-    from email_service import smtp
-
     with patch.object(smtp, 'send') as mock_send:
         send_welcome_email("user@example.com")
 
@@ -136,9 +132,6 @@ def test_send_email_with_context_manager():
 # For async methods
 @pytest.mark.asyncio
 async def test_async_operation():
-    from unittest.mock import patch, AsyncMock
-    from service import external_api
-
     with patch.object(external_api, 'fetch_data', new_callable=AsyncMock) as mock_fetch:
         mock_fetch.return_value = {"status": "success"}
 

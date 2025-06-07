@@ -15,7 +15,6 @@ def mock_db():
 class TestCategoriesService:
     @pytest.mark.asyncio
     async def test_list_categories_success(self, mock_db) -> None:
-        # Arrange
         with patch.object(CategoriesRepository, "get_categories_with_stats", new_callable=AsyncMock) as mock_get_stats:
             mock_get_stats.return_value = [
                 ("nature", 5, "2024-01-01T00:00:00"),
@@ -25,10 +24,8 @@ class TestCategoriesService:
 
             service = CategoriesService(mock_db)
 
-            # Act
             result = await service.list_categories()
 
-            # Assert
             assert len(result) == 3
             assert result[0] == {"name": "nature", "photo_count": 5, "latest_photo": "2024-01-01T00:00:00"}
             assert result[1] == {"name": "portraits", "photo_count": 3, "latest_photo": "2024-01-02T00:00:00"}
@@ -37,22 +34,18 @@ class TestCategoriesService:
 
     @pytest.mark.asyncio
     async def test_list_categories_empty(self, mock_db) -> None:
-        # Arrange
         with patch.object(CategoriesRepository, "get_categories_with_stats", new_callable=AsyncMock) as mock_get_stats:
             mock_get_stats.return_value = []
 
             service = CategoriesService(mock_db)
 
-            # Act
             result = await service.list_categories()
 
-            # Assert
             assert result == []
             mock_get_stats.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_photos_in_category_success(self, mock_db) -> None:
-        # Arrange
         category = "nature"
         mock_photo = Mock()
         mock_photo.id = "photo1"
@@ -71,10 +64,8 @@ class TestCategoriesService:
 
             service = CategoriesService(mock_db)
 
-            # Act
             result = await service.get_photos_in_category(category)
 
-            # Assert
             assert result is not None
             assert len(result) == 1
             photo = result[0]
@@ -95,7 +86,6 @@ class TestCategoriesService:
 
     @pytest.mark.asyncio
     async def test_get_photos_in_category_not_found(self, mock_db) -> None:
-        # Arrange
         category = "nonexistent"
 
         with patch.object(CategoriesRepository, "get_photos_by_category", new_callable=AsyncMock) as mock_get_photos:
@@ -103,16 +93,13 @@ class TestCategoriesService:
 
             service = CategoriesService(mock_db)
 
-            # Act
             result = await service.get_photos_in_category(category)
 
-            # Assert
             assert result is None
             mock_get_photos.assert_called_once_with(category)
 
     @pytest.mark.asyncio
     async def test_get_photos_in_category_empty_list(self, mock_db) -> None:
-        # Arrange
         category = "empty"
 
         with patch.object(CategoriesRepository, "get_photos_by_category", new_callable=AsyncMock) as mock_get_photos:
@@ -120,16 +107,13 @@ class TestCategoriesService:
 
             service = CategoriesService(mock_db)
 
-            # Act
             result = await service.get_photos_in_category(category)
 
-            # Assert
             assert result is None
             mock_get_photos.assert_called_once_with(category)
 
     @pytest.mark.asyncio
     async def test_get_photos_in_category_multiple_photos(self, mock_db) -> None:
-        # Arrange
         category = "nature"
 
         mock_photo1 = Mock()
@@ -161,10 +145,8 @@ class TestCategoriesService:
 
             service = CategoriesService(mock_db)
 
-            # Act
             result = await service.get_photos_in_category(category)
 
-            # Assert
             assert result is not None
             assert len(result) == 2
             assert result[0]["id"] == "photo1"
