@@ -18,6 +18,7 @@
 - When adding dependencies use `uv add dep-name` do not manually configure the `pyproject.toml` file.
     - You will need to `cd` into the appropriate directory first, e.g. `cd src/db` or `cd src/api`.
 - When running Python code use `uv run` command, e.g. `uv run src/api/src/main.py`.
+- You can run tests by using `uv run make unit-tests`.
 - Remember not to inline imports. They must be put at the top of the files.
 - Type hints should use Python 3.12+ syntax.
     - Use `list` instead of `List`, `Foo | None` instead of `Optional[Foo]`, `Foo | Bar` instead of `Union[Foo, Bar]`,
@@ -25,14 +26,14 @@
 - Do not create `__init__.py` files unless it is necessary for initialization logic.
     - `__init__.py` files are not necessary after Python 3.3.
 - Naming conventions:
-  - Use `foo` for public functions, methods, variables, classes, modules, and packages.
-  - Use `_foo` for protected functions, methods, variables, classes, modules, and packages.
-  - Use `__foo` for private functions, methods, and variables.
+    - Use `foo` for public functions, methods, variables, classes, modules, and packages.
+    - Use `_foo` for protected functions, methods, variables, classes, modules, and packages.
+    - Use `__foo` for private functions, methods, and variables.
 - `@staticmethod` should be used for methods that do not require access to the instance or class.
 - `@classmethod` should be used for methods that require access to the class but not the instance.
 - Always use Pathlib for file and directory operations instead of os.path.
 - Prefer importing specific functions or classes from modules instead of importing the entire module.
-  - For example, use `from module import function` instead of `import module`.
+    - For example, use `from module import function` instead of `import module`.
 
 # Bash
 
