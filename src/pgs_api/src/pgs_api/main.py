@@ -18,18 +18,14 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     """Application lifespan manager for startup and shutdown tasks."""
-    # Startup
     logger.info("Starting Photography Server API")
 
-    # Initialize database
     db_manager.initialize()
 
-    # Create tables if they don't exist
     await db_manager.create_tables()
 
-    # Ensure storage directory exists
     api_config.storage_path.mkdir(exist_ok=True)
 
     logger.info(f"Storage path: {api_config.storage_path.absolute()}")
@@ -37,7 +33,6 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown
     logger.info("Shutting down Photography Server API")
     await db_manager.close()
 
@@ -45,7 +40,6 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
 
-    # Create FastAPI app with custom configuration
     app = FastAPI(
         title=api_config.title,
         description=api_config.description,

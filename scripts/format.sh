@@ -39,27 +39,27 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate target directory exists
-if [[ ! -d "$target_dir" ]]; then
-  echo "Error: Directory '$target_dir' does not exist"
+if [[ ! -d "${target_dir}" ]]; then
+  echo "Error: Directory '${target_dir}' does not exist"
   exit 1
 fi
 
-cd "$target_dir"
+cd "${target_dir}"
 
 TARGET_PYTHON_VERSION="py312" # see: black --help (--target-version)
 
 run_formatter_diff() {
   if ! uv run -- black --line-length=120 --diff --check --color --target-version="${TARGET_PYTHON_VERSION}" .; then
-    echo "Formatting issues have been found in $target_dir, please run 'make format' to fix them."
+    echo "Formatting issues have been found in ${target_dir}, please run 'make format' to fix them."
     exit 1
   fi
-  echo "No formatting issues found in $target_dir."
+  echo "No formatting issues found in ${target_dir}."
 }
 
 run_formatter_inplace() {
-  echo "Formatting Python code in $target_dir..."
+  echo "Formatting Python code in ${target_dir}..."
   uv run -- black --line-length=120 --target-version="${TARGET_PYTHON_VERSION}" .
-  echo "Formatting completed for $target_dir."
+  echo "Formatting completed for ${target_dir}."
 }
 
 if [ "${diff}" = "true" ]; then
