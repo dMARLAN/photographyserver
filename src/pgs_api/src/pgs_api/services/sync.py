@@ -1,23 +1,12 @@
 import logging
-from dataclasses import dataclass
 
 from fastapi import Depends
 
 from pgs_api.config import get_api_config, APIConfig
 from pgs_api.repositories.sync import SyncRepository
+from pgs_api.types.sync import SyncStats
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class SyncStats:
-    """Statistics for the sync operation."""
-
-    files_scanned: int
-    files_added: int
-    files_updated: int
-    files_removed: int
-    errors: int
 
 
 class SyncService:

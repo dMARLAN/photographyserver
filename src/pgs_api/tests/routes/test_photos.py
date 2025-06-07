@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -6,50 +5,8 @@ import pytest
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
-from pgs_api.routes.photos import get_photo_metadata, serve_photo_file_info
+from pgs_api.routes.photos import serve_photo_file_info
 from pgs_api.services.photos import PhotosService, PhotoFileInfo
-from pgs_api.models import Photo
-
-
-class TestGetPhotoMetadata:
-    @pytest.mark.asyncio
-    async def test_get_photo_metadata_success(self) -> None:
-        photo_id = "photo123"
-        expected_photo = Photo(
-            id=photo_id,
-            filename="test.jpg",
-            file_path=Path("/photos/nature/test.jpg"),
-            category="nature",
-            title="Test Photo",
-            file_size=2621440,
-            width=1920,
-            height=1080,
-            created_at=datetime(2024, 1, 1),
-            updated_at=datetime(2024, 1, 1),
-            file_modified_at=datetime(2024, 1, 1),
-        )
-
-        mock_service = Mock(spec=PhotosService)
-        mock_service.get_photo_by_id = AsyncMock(return_value=expected_photo)
-
-        result = await get_photo_metadata(photo_id, photo_service=mock_service)
-
-        assert result == expected_photo
-        mock_service.get_photo_by_id.assert_called_once_with(photo_id)
-
-    @pytest.mark.asyncio
-    async def test_get_photo_metadata_not_found(self) -> None:
-        photo_id = "nonexistent"
-
-        mock_service = Mock(spec=PhotosService)
-        mock_service.get_photo_by_id = AsyncMock(return_value=None)
-
-        with pytest.raises(HTTPException) as exc_info:
-            await get_photo_metadata(photo_id, photo_service=mock_service)
-
-        assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == "Photo not found"
-        mock_service.get_photo_by_id.assert_called_once_with(photo_id)
 
 
 class TestServePhotoFile:

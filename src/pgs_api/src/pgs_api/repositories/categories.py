@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pgs_api.types.category import CategoryStats
 from pgs_db.database import db_manager
-from pgs_db.models import Photo
+from pgs_db.models.photos import PLPhoto
 
 
 class CategoriesRepository:
@@ -17,12 +17,12 @@ class CategoriesRepository:
         """Get all categories with photo counts and latest photo timestamp."""
         result = await self.__session.execute(
             select(
-                Photo.category,
-                func.count(Photo.id).label("photo_count"),
-                func.max(Photo.created_at).label("latest_photo"),
+                PLPhoto.category,
+                func.count(PLPhoto.id).label("photo_count"),
+                func.max(PLPhoto.created_at).label("latest_photo"),
             )
-            .group_by(Photo.category)
-            .order_by(Photo.category)
+            .group_by(PLPhoto.category)
+            .order_by(PLPhoto.category)
         )
 
         return [
@@ -34,9 +34,9 @@ class CategoriesRepository:
             for row in result.all()
         ]
 
-    async def get_photos_by_category(self, category: str) -> Sequence[Photo]:
+    async def get_photos_by_category(self, category: str) -> Sequence[PLPhoto]:
         """Get all photos in a specific category."""
         result = await self.__session.execute(
-            select(Photo).where(Photo.category == category).order_by(Photo.created_at.desc())
+            select(PLPhoto).where(PLPhoto.category == category).order_by(PLPhoto.created_at.desc())
         )
         return result.scalars().all()

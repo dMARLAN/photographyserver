@@ -4,7 +4,8 @@ import pytest
 from fastapi import HTTPException
 
 from pgs_api.routes.sync import sync_photos
-from pgs_api.services.sync import SyncService, SyncStats
+from pgs_api.services.sync import SyncService
+from pgs_api.types.sync import SyncStats
 
 
 class TestSyncPhotos:

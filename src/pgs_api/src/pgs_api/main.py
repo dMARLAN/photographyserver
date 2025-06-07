@@ -10,7 +10,6 @@ from fastapi.staticfiles import StaticFiles
 
 from pgs_api.config import api_config
 from pgs_api.routes import photos, categories, sync
-from pgs_api.types.healthcheck import HealthCheck, DBStatus, APIStatus
 from pgs_db.database import db_manager
 
 # Configure logging
@@ -73,16 +72,10 @@ def create_app() -> FastAPI:
 
     # Health check endpoint
     @app.get("/healthcheck")
-    async def health_check() -> HealthCheck:
+    async def health_check() -> dict[str, str]:
         """Health check endpoint to verify API and database connectivity."""
         db_health = await db_manager.health_check()
-        return HealthCheck(
-            db_status=DBStatus.HEALTHY if db_health["status"] == "healthy" else DBStatus.UNHEALTHY,
-            api_status=APIStatus(
-                version=api_config.version,
-                environment=api_config.environment,
-            ),
-        )
+        return {"status": db_health["status"]}
 
     # Include API routes with versioning
     include_api_routes(app)

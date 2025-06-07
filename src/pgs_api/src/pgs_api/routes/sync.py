@@ -3,7 +3,8 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from starlette.status import HTTP_200_OK
 
-from pgs_api.services.sync import SyncService, SyncStats
+from pgs_api.services.sync import SyncService
+from pgs_api.types.sync import SyncStats
 
 logger = logging.getLogger(__name__)
 

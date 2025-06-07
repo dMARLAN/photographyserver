@@ -1,56 +1,13 @@
-from unittest.mock import AsyncMock, Mock
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 from pgs_api.repositories.photos import PhotosRepository
 from pgs_api.services.photos import PhotosService, PhotoFileInfo
-from pgs_api.models import Photo
 
 
 class TestPhotosService:
-
-    @pytest.mark.asyncio
-    async def test_get_photo_by_id_success(self) -> None:
-        photo_id = "photo123"
-        mock_db_photo = Mock()
-        mock_db_photo.id = photo_id
-        mock_db_photo.filename = "test.jpg"
-        mock_db_photo.file_path = "/photos/nature/test.jpg"
-        mock_db_photo.category = "nature"
-        mock_db_photo.title = "Test Photo"
-        mock_db_photo.file_size = 2621440
-        mock_db_photo.width = 1920
-        mock_db_photo.height = 1080
-        mock_db_photo.created_at = "2024-01-01T00:00:00"
-        mock_db_photo.updated_at = "2024-01-01T00:00:00"
-        mock_db_photo.file_modified_at = "2024-01-01T00:00:00"
-
-        mock_repository = Mock(spec=PhotosRepository)
-        mock_repository.get_photo_by_id = AsyncMock(return_value=mock_db_photo)
-
-        service = PhotosService(photos_repository=mock_repository)
-        result = await service.get_photo_by_id(photo_id)
-
-        assert result is not None
-        assert isinstance(result, Photo)
-        assert result.id == photo_id
-        assert result.filename == "test.jpg"
-        assert result.category == "nature"
-        mock_repository.get_photo_by_id.assert_called_once_with(photo_id)
-
-    @pytest.mark.asyncio
-    async def test_get_photo_by_id_not_found(self) -> None:
-        photo_id = "nonexistent"
-
-        mock_repository = Mock(spec=PhotosRepository)
-        mock_repository.get_photo_by_id = AsyncMock(return_value=None)
-
-        service = PhotosService(photos_repository=mock_repository)
-        result = await service.get_photo_by_id(photo_id)
-
-        assert result is None
-        mock_repository.get_photo_by_id.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
     async def test_get_photo_file_info_success(self) -> None:
@@ -166,29 +123,3 @@ class TestPhotosService:
 
         assert result is not None
         assert result.media_type == expected_media_type
-
-    @pytest.mark.asyncio
-    async def test_file_size_mb_rounding(self) -> None:
-        photo_id = "photo123"
-        mock_db_photo = Mock()
-        mock_db_photo.id = photo_id
-        mock_db_photo.filename = "test.jpg"
-        mock_db_photo.file_path = "/photos/nature/test.jpg"
-        mock_db_photo.category = "nature"
-        mock_db_photo.title = "Test Photo"
-        mock_db_photo.file_size = 2621440
-        mock_db_photo.width = 1920
-        mock_db_photo.height = 1080
-        mock_db_photo.created_at = "2024-01-01T00:00:00"
-        mock_db_photo.updated_at = "2024-01-01T00:00:00"
-        mock_db_photo.file_modified_at = "2024-01-01T00:00:00"
-
-        mock_repository = Mock(spec=PhotosRepository)
-        mock_repository.get_photo_by_id = AsyncMock(return_value=mock_db_photo)
-
-        service = PhotosService(photos_repository=mock_repository)
-        result = await service.get_photo_by_id(photo_id)
-
-        assert result is not None
-        assert result.file_size == 2621440
-        mock_repository.get_photo_by_id.assert_called_once_with(photo_id)

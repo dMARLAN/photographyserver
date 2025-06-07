@@ -1,6 +1,4 @@
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-from typing import Any
 
 from sqlalchemy import MetaData, text
 from sqlalchemy.ext.asyncio import (
@@ -80,7 +78,6 @@ class DatabaseManager:
             raise RuntimeError("Database not initialized. Call initialize() first.")
         return self._session_factory
 
-    @asynccontextmanager
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Get a database session with automatic cleanup."""
         if self._session_factory is None:
@@ -105,26 +102,15 @@ class DatabaseManager:
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
 
-    async def health_check(self) -> dict[str, Any]:
+    async def health_check(self) -> dict[str, str]:
         """Check database connectivity and return status."""
         try:
             async with self.session_factory() as session:
                 result = await session.execute(text("SELECT 1"))
                 result.scalar()
-                return {
-                    "status": "healthy",
-                    "database": db_config.db_name,
-                    "host": db_config.db_host,
-                    "port": db_config.db_port,
-                }
-        except Exception as e:
-            return {
-                "status": "unhealthy",
-                "error": str(e),
-                "database": db_config.db_name,
-                "host": db_config.db_host,
-                "port": db_config.db_port,
-            }
+                return {"status": "healthy"}
+        except Exception:
+            return {"status": "unhealthy"}
 
 
 # Global database manager instance

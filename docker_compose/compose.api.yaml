@@ -15,8 +15,6 @@ services:
       - "8000:8000"
     volumes:
       - ../photos:/app/photos
-      - ../src/pgs_api:/app/src/pgs_api
-      - ../src/pgs_db:/app/src/pgs_db
     depends_on:
       postgres:
         condition: service_healthy
