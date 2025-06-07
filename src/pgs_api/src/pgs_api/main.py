@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from pgs_db.database import db_manager
 from pgs_api.config import api_config
 from pgs_api.routes import photos, categories, sync
+from pgs_db.database import db_manager
 
 # Configure logging
 logging.basicConfig(

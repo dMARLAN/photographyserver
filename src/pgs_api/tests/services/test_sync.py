@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import Mock, patch
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from pgs_api.services.sync import SyncService
+import pytest
+
 from pgs_api.repositories.sync import SyncRepository
+from pgs_api.services.sync import SyncService
 
 
 class TestSyncService:

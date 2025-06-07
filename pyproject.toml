@@ -13,3 +13,24 @@ members = [
     "src/pgs_api",
     "src/pgs_db",
 ]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",  # Errors
+    "F",  # Pyflakes
+    "N",  # Naming conventions
+    "Q",  # Complexity
+    "T",  # Type annotations
+    "ANN",  # Annotations
+]
+ignore = [
+    "S101" # `assert` usage
+]

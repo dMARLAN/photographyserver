@@ -45,9 +45,7 @@ class DatabaseConfig:
     @property
     def database_url(self) -> str:
         """Construct the async PostgreSQL database URL."""
-        return (
-            f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
-        )
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
     @property
     def sync_database_url(self) -> str:

@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pgs_api.services.categories import CategoriesService
 from pgs_api.repositories.categories import CategoriesRepository
+from pgs_api.services.categories import CategoriesService
 
 
 @pytest.fixture

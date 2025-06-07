@@ -22,11 +22,6 @@ dev = [
     "ruff>=0.11.13",
 ]
 
-[tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
-
 [tool.uv.sources]
 pgs-db = { workspace = true }
 

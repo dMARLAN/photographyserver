@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pgs_api.repositories.photos import PhotosRepository
