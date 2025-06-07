@@ -32,16 +32,13 @@ class DatabaseConfig:
 
     def _get_photos_path(self) -> Path:
         """Get the photos storage path based on environment."""
-        # Allow explicit override via environment variable
         explicit_path = os.getenv("PHOTOS_BASE_PATH")
         if explicit_path:
             return Path(explicit_path)
 
-        # Environment-based defaults
         if self.environment == "production":
             return Path("/photoserver/photos")
         else:
-            # Development: use project root + photos
             project_root = Path(__file__).parent.parent.parent.parent.parent
             return project_root / "photos"
 
@@ -49,13 +46,13 @@ class DatabaseConfig:
     def database_url(self) -> str:
         """Construct the async PostgreSQL database URL."""
         return (
-            f"postgresql+asyncpg://{self.db_user}:{self.db_password}" f"@{self.db_host}:{self.db_port}/{self.db_name}"
+            f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
     @property
     def sync_database_url(self) -> str:
         """Construct the sync PostgreSQL database URL for Alembic migrations."""
-        return f"postgresql://{self.db_user}:{self.db_password}" f"@{self.db_host}:{self.db_port}/{self.db_name}"
+        return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
 # Global configuration instance

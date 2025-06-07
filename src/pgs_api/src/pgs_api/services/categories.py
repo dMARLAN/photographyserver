@@ -5,11 +5,11 @@ from pgs_api.repositories.categories import CategoriesRepository
 
 class CategoriesService:
     def __init__(self, db: AsyncSession):
-        self.repository = CategoriesRepository(db)
+        self._repository = CategoriesRepository(db)
 
     async def list_categories(self):
         """Get all available photo categories with counts and latest photo timestamp."""
-        categories = await self.repository.get_categories_with_stats()
+        categories = await self._repository.get_categories_with_stats()
         return [
             {"name": category, "photo_count": photo_count, "latest_photo": latest_photo}
             for category, photo_count, latest_photo in categories
@@ -17,7 +17,7 @@ class CategoriesService:
 
     async def get_photos_in_category(self, category: str):
         """Get all photos in a specific category."""
-        photos = await self.repository.get_photos_by_category(category)
+        photos = await self._repository.get_photos_by_category(category)
 
         if not photos:
             return None

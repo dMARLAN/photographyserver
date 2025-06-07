@@ -214,14 +214,14 @@ async def sync_filesystem_to_db(storage_path: Path | str | None = None) -> SyncS
                 stats = stats._replace(files_scanned=stats.files_scanned + 1)
 
                 try:
-                    # Check if photo already exists in database
+                    # Check if a photo already exists in the database
                     existing_photo = existing_photos.get(file_path_str)
 
                     # Extract metadata
                     metadata = extract_image_metadata(image_file)
 
                     if existing_photo is None:
-                        # Add new photo
+                        # Add a new photo
                         title = generate_title_from_filename(image_file.name)
 
                         new_photo = Photo(
@@ -240,9 +240,9 @@ async def sync_filesystem_to_db(storage_path: Path | str | None = None) -> SyncS
                         logger.debug(f"Added new photo: {image_file.name}")
 
                     else:
-                        # Check if file was modified since last sync
+                        # Check if a file was modified since last sync
                         if existing_photo.file_modified_at != metadata.file_modified_at:
-                            # Update existing photo
+                            # Update an existing photo
                             existing_photo.filename = image_file.name
                             existing_photo.category = category_name
                             existing_photo.file_size = metadata.file_size
@@ -312,7 +312,7 @@ async def sync_single_file(file_path: Path | str, category: str | None = None) -
         async with db_manager.get_session() as session:
             file_path_str = str(file_path.resolve())
 
-            # Check if photo already exists
+            # Check if a photo already exists
             result = await session.execute(select(Photo).where(Photo.file_path == file_path_str))
             existing_photo = result.scalar_one_or_none()
 
@@ -320,7 +320,7 @@ async def sync_single_file(file_path: Path | str, category: str | None = None) -
             metadata = extract_image_metadata(file_path)
 
             if existing_photo is None:
-                # Add new photo
+                # Add a new photo
                 title = generate_title_from_filename(file_path.name)
 
                 new_photo = Photo(
@@ -338,7 +338,7 @@ async def sync_single_file(file_path: Path | str, category: str | None = None) -
                 logger.info(f"Added new photo: {file_path.name}")
 
             else:
-                # Update existing photo if modified
+                # Update an existing photo if modified
                 if existing_photo.file_modified_at != metadata.file_modified_at:
                     existing_photo.filename = file_path.name
                     existing_photo.category = category

@@ -6,11 +6,26 @@ from pgs_api.repositories.photos import PhotosRepository
 
 class PhotosService:
     def __init__(self, db: AsyncSession):
-        self.repository = PhotosRepository(db)
+        self._repository = PhotosRepository(db)
+
+    @staticmethod
+    def __get_media_type(file_extension: str) -> str:
+        """Get media type based on file extension."""
+        media_type_map = {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".webp": "image/webp",
+            ".gif": "image/gif",
+            ".bmp": "image/bmp",
+            ".tiff": "image/tiff",
+            ".tif": "image/tiff",
+        }
+        return media_type_map.get(file_extension.lower(), "application/octet-stream")
 
     async def get_photo_by_id(self, photo_id: str):
         """Get photo metadata by ID."""
-        photo = await self.repository.get_photo_by_id(photo_id)
+        photo = await self._repository.get_photo_by_id(photo_id)
 
         if not photo:
             return None
@@ -36,7 +51,7 @@ class PhotosService:
 
     async def get_photo_file_info(self, photo_id: str):
         """Get photo file information for serving the file."""
-        photo = await self.repository.get_photo_by_id(photo_id)
+        photo = await self._repository.get_photo_by_id(photo_id)
 
         if not photo:
             return None
@@ -45,18 +60,7 @@ class PhotosService:
         if not file_path.exists():
             return None
 
-        media_type_map = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".png": "image/png",
-            ".webp": "image/webp",
-            ".gif": "image/gif",
-            ".bmp": "image/bmp",
-            ".tiff": "image/tiff",
-            ".tif": "image/tiff",
-        }
-
-        media_type = media_type_map.get(photo.file_extension.lower(), "application/octet-stream")
+        media_type = self.__get_media_type(photo.file_extension)
 
         return {
             "file_path": file_path,
