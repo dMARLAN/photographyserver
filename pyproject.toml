@@ -1,0 +1,15 @@
+[project]
+name = "pgs"
+version = "0.1.0"
+description = "Photography Server (pgs) for managing and serving images"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "hatchling>=1.27.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "src/pgs_api",
+    "src/pgs_db",
+]

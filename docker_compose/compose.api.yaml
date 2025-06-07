@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: src/pgs_api/Dockerfile
+    container_name: pgs_api
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=photography_server
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../photos:/app/photos
+      - ../src/pgs_api:/app/src/pgs_api
+      - ../src/pgs_db:/app/src/pgs_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: [ "uv", "run", "run.py" ]
+    working_dir: /app/src/pgs_api

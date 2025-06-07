@@ -1,0 +1,17 @@
+services:
+  frontend:
+    build:
+      context: ../src/frontend
+      dockerfile: Dockerfile
+    container_name: pgs_frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
+      - API_URL=http://api:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../src/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    command: [ "npm", "run", "dev" ]

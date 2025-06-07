@@ -1,0 +1,33 @@
+# The project primarily consists of modules in src/ + an experimental dir
+
+# Notes
+- Remember to read this guide when making LLM calls
+- When finished making changes, make sure to run `make ci` to validate the changes, and fix any issues before you finish.
+- If you need to launch the application use `make up-dev`.
+
+# Frontend
+- When adding new components, prefer using shadcn for components
+- To add shadcn components correctly, use `npx shadcn-ui@latest add` command from the frontend directory
+
+# Python
+- All Python code is using Python 3.12+
+- When adding dependencies use `uv add dep-name` do not manually configure the `pyproject.toml` file.
+  - You will need to `cd` into the appropriate directory first, e.g. `cd src/db` or `cd src/api`.
+- When running Python code use `uv run` command, e.g. `uv run src/api/src/main.py`.
+- Remember not to inline imports. They must be put at the top of the files.
+- Type hints should use Python 3.12+ syntax.
+    - Use `list` instead of `List`, `Foo | None` instead of `Optional[Foo]`, `Foo | Bar` instead of `Union[Foo, Bar]`, etc.
+- Do not create `__init__.py` files unless it is necessary for initialization logic.
+    - `__init__.py` files are not necessary after Python 3.3.
+
+# Readability
+- Only use comments when necessary and add context. Code should be self-explanatory.
+- "Perfect code" has zero comments, except for:
+    - TODOs (not relevant for you)
+    - "why" comments that explain the reasoning behind a decision that is unorthodox—this is not necessary for orthodox code
+    - linking to external resources, documentation, references, or algorithms when necessary
+- If a block of code is becoming complex, break it into (a) smaller function(s)/method(s) to encapsulate that logic with (a) helpful name(s) instead of comments.
+- Do not use redundant comments that simply restate what the code is doing:
+    - Bad: `# Create user` above `user = User(name="John")`
+    - Bad: `# Get the data` or `# Initialize variables`
+    - Good: `# This is a workaround for...` or `# This is a temporary solution until...`
