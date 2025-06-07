@@ -1,0 +1,253 @@
+"""Main sync worker that orchestrates file watching and database synchronization."""
+
+import asyncio
+import logging
+import signal
+import time
+from datetime import datetime, timezone
+from queue import Empty, Queue
+from types import FrameType
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from pgs_db.database import db_manager
+from pgs_sync.config import sync_config
+from pgs_sync.health import HealthMonitor
+from pgs_sync.sync_engine import SyncEngine
+from pgs_sync.types import FileEvent
+from pgs_sync.watcher import PhotoDirectoryWatcher
+
+logger = logging.getLogger(__name__)
+
+
+class SyncWorker:
+    """Main sync worker that coordinates all sync operations."""
+
+    def __init__(self) -> None:
+        self.config = sync_config
+        self.db_manager = db_manager
+        self.event_queue: Queue[FileEvent] = Queue()
+        self.watcher = PhotoDirectoryWatcher(self.config.photos_base_path, self.event_queue)
+        self.sync_engine = SyncEngine(self._get_db_session)
+
+        # Initialize health monitor with dependencies
+        self.health_monitor = HealthMonitor(
+            db_manager=self.db_manager,
+            watcher_observer=None,  # Will be set after watcher is started
+            get_queue_size=lambda: self.event_queue.qsize(),
+        )
+
+        self.running = False
+        self._setup_signal_handlers()
+
+    def _get_db_session(self) -> AsyncSession:
+        """Get a database session from the session factory."""
+        return self.db_manager.session_factory()
+
+    def _setup_signal_handlers(self) -> None:
+        """Set up graceful shutdown signal handlers."""
+
+        def signal_handler(signum: int, frame: FrameType | None) -> None:
+            logger.info(f"Received signal {signum}, shutting down gracefully...")
+            self.running = False
+
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+
+    async def start(self) -> None:
+        """Start the sync worker and all its components."""
+        logger.info("Starting sync worker")
+        self.running = True
+
+        try:
+            # Perform initial sync if configured
+            if self.config.initial_sync_on_startup:
+                logger.info("Performing initial sync on startup")
+                start_time = time.time()
+                sync_stats = await self.sync_engine.perform_initial_sync()
+                processing_time_ms = (time.time() - start_time) * 1000
+
+                # Update health monitor with initial sync statistics
+                self.health_monitor.update_stats(
+                    sync_stats=sync_stats,
+                    processing_time_ms=processing_time_ms,
+                    last_full_sync=datetime.now(timezone.utc),
+                )
+
+            # Start file system watcher
+            await self.watcher.start_watching()
+
+            # Set watcher observer in health monitor after it's started
+            self.health_monitor.set_watcher_observer(self.watcher.observer)
+
+            # Start health monitoring server
+            health_task = asyncio.create_task(self._start_health_server())
+
+            # Start event processing loop
+            event_task = asyncio.create_task(self._process_events())
+
+            # Start periodic sync task
+            periodic_task = asyncio.create_task(self._periodic_sync())
+
+            # Wait for all tasks to complete or shutdown signal
+            await asyncio.gather(health_task, event_task, periodic_task, return_exceptions=True)
+
+        except Exception as e:
+            logger.error(f"Error in sync worker: {e}")
+        finally:
+            await self.shutdown()
+
+    async def shutdown(self) -> None:
+        """Gracefully shutdown the sync worker."""
+        logger.info("Shutting down sync worker")
+        self.running = False
+
+        # Stop file system watcher
+        await self.watcher.stop_watching()
+
+        logger.info("Sync worker shutdown complete")
+
+    async def _start_health_server(self) -> None:
+        """Start the health monitoring HTTP server."""
+        import uvicorn
+
+        config = uvicorn.Config(
+            app=self.health_monitor.get_app(),
+            host=self.config.health_check_host,
+            port=self.config.health_check_port,
+            log_level=self.config.log_level.lower(),
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
+
+    async def _process_events(self) -> None:
+        """Process file system events from the queue."""
+        logger.info("Starting event processing loop")
+
+        while self.running:
+            try:
+                # Collect events into batches for efficient processing
+                events_batch = await self._collect_event_batch()
+
+                if not events_batch:
+                    # No events collected, sleep briefly to avoid busy waiting
+                    await asyncio.sleep(0.1)
+                    continue
+
+                # Process the batch with retry logic
+                await self._process_event_batch_with_retry(events_batch)
+
+            except Exception as e:
+                logger.error(f"Error in event processing loop: {e}")
+                # Sleep to prevent rapid error cycling
+                await asyncio.sleep(1)
+
+    async def _collect_event_batch(self) -> list[FileEvent]:
+        """Collect events from the queue into a batch for processing.
+
+        Returns:
+            List of FileEvent objects to process
+        """
+        events_batch: list[FileEvent] = []
+        batch_timeout = 1.0  # 1 second timeout for batching
+        batch_start_time = time.time()
+
+        while (
+            len(events_batch) < self.config.max_batch_size
+            and time.time() - batch_start_time < batch_timeout
+            and self.running
+        ):
+
+            try:
+                # Use a small timeout to allow batching while being responsive
+                event = self.event_queue.get(timeout=0.1)
+                events_batch.append(event)
+                self.event_queue.task_done()
+
+                # If this is the first event in the batch, apply debounce delay
+                if len(events_batch) == 1:
+                    await asyncio.sleep(self.config.event_debounce_delay)
+
+            except Empty:
+                # No more events available, break if we have some events
+                if events_batch:
+                    break
+                # Otherwise continue waiting for events
+                continue
+
+        if events_batch:
+            logger.debug(f"Collected batch of {len(events_batch)} events for processing")
+
+        return events_batch
+
+    async def _process_event_batch_with_retry(self, events: list[FileEvent]) -> None:
+        """Process a batch of events with retry logic.
+
+        Args:
+            events: List of events to process
+        """
+        last_exception = None
+        start_time = time.time()
+
+        for attempt in range(self.config.retry_attempts):
+            try:
+                # Process the entire batch
+                await self.sync_engine.process_event_batch(events)
+
+                # Calculate processing time
+                processing_time_ms = (time.time() - start_time) * 1000
+
+                # Extract event types for daily statistics
+                event_types = [event.event_type for event in events]
+
+                # Update statistics on successful processing
+                self.health_monitor.update_stats(
+                    processed_events=len(events),
+                    last_sync=datetime.now(timezone.utc),
+                    processing_time_ms=processing_time_ms,
+                    event_types=event_types,
+                )
+
+                logger.info(f"Successfully processed batch of {len(events)} events in {processing_time_ms:.1f}ms")
+                return
+
+            except Exception as e:
+                last_exception = e
+                attempt_num = attempt + 1
+
+                if attempt_num < self.config.retry_attempts:
+                    logger.warning(
+                        f"Failed to process event batch (attempt {attempt_num}/{self.config.retry_attempts}): {e}. "
+                        f"Retrying in {self.config.retry_delay} seconds..."
+                    )
+                    await asyncio.sleep(self.config.retry_delay)
+                else:
+                    logger.error(f"Failed to process event batch after {self.config.retry_attempts} attempts: {e}")
+
+        # Update statistics for failed processing
+        self.health_monitor.update_stats(failed_events=len(events))
+
+        # Re-raise the last exception after all retries failed
+        if last_exception:
+            raise last_exception
+
+    async def _periodic_sync(self) -> None:
+        """Perform periodic full syncs as fallback."""
+        logger.info("Starting periodic sync loop")
+
+        while self.running:
+            try:
+                await asyncio.sleep(self.config.periodic_sync_interval)
+                if self.running:
+                    start_time = time.time()
+                    sync_stats = await self.sync_engine.perform_periodic_sync()
+                    processing_time_ms = (time.time() - start_time) * 1000
+
+                    # Update health monitor with periodic sync statistics
+                    self.health_monitor.update_stats(
+                        sync_stats=sync_stats,
+                        processing_time_ms=processing_time_ms,
+                        last_full_sync=datetime.now(timezone.utc),
+                    )
+            except Exception as e:
+                logger.error(f"Error in periodic sync: {e}")

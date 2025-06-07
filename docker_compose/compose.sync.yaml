@@ -1,0 +1,44 @@
+services:
+  sync-worker:
+    build:
+      context: ..
+      dockerfile: src/pgs_sync/Dockerfile
+    container_name: pgs_sync_worker
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=photography_server
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - ENVIRONMENT=development
+      - SYNC_PHOTOS_BASE_PATH=/app/photos
+      - SYNC_INITIAL_SYNC_ON_STARTUP=true
+      - SYNC_PERIODIC_SYNC_INTERVAL=300
+      - SYNC_HEALTH_CHECK_PORT=8001
+      - SYNC_HEALTH_CHECK_HOST=0.0.0.0
+      - SYNC_LOG_LEVEL=INFO
+    ports:
+      - "8001:8001"
+    volumes:
+      - ../photos:/app/photos:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["uv", "run", "run.py"]
+    working_dir: /app/src/pgs_sync
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    develop:
+      watch:
+        - action: sync
+          path: ../src/pgs_sync/src
+          target: /app/src/pgs_sync/src
+        - action: sync
+          path: ../src/pgs_db/src
+          target: /app/src/pgs_db/src
+        - action: rebuild
+          path: ../src/pgs_sync/pyproject.toml

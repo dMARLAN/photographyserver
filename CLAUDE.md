@@ -7,6 +7,11 @@
   finish.
 - If you need to launch the application use `make up-dev`.
 
+# Docker
+
+- When using `docker-compose.sh` and you want to exclude a service, use the `--exclude` flag with the name of the file,
+  for example `--exclude="compose.api.yaml"`.
+
 # Frontend
 
 - When adding new components, prefer using shadcn for components

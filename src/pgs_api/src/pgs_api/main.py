@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from pgs_api.config import api_config
-from pgs_api.routes import photos, categories, sync
+from pgs_api.routes import photos, categories
 from pgs_db.database import db_manager
 
 # Configure logging
@@ -89,7 +89,6 @@ def include_api_routes(app: FastAPI) -> None:
     # Include all API v1 route modules
     app.include_router(photos.router, prefix=api_config.api_v1_prefix)
     app.include_router(categories.router, prefix=api_config.api_v1_prefix)
-    app.include_router(sync.router, prefix=api_config.api_v1_prefix)
 
 
 # Create the application instance
