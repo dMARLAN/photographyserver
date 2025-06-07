@@ -28,8 +28,8 @@
   - Use `foo` for public functions, methods, variables, classes, modules, and packages.
   - Use `_foo` for protected functions, methods, variables, classes, modules, and packages.
   - Use `__foo` for private functions, methods, and variables.
-- @staticmethod should be used for methods that do not require access to the instance or class.
-- @classmethod should be used for methods that require access to the class but not the instance.
+- `@staticmethod` should be used for methods that do not require access to the instance or class.
+- `@classmethod` should be used for methods that require access to the class but not the instance.
 - Always use Pathlib for file and directory operations instead of os.path.
 
 # Bash
