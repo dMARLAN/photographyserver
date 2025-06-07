@@ -1,18 +1,16 @@
 from pathlib import Path
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pgs_db.models import Photo
+from pgs_api.repositories.photos import PhotosRepository
 
 
 class PhotosService:
     def __init__(self, db: AsyncSession):
-        self.db = db
+        self.repository = PhotosRepository(db)
 
     async def get_photo_by_id(self, photo_id: str):
         """Get photo metadata by ID."""
-        result = await self.db.execute(select(Photo).where(Photo.id == photo_id))
-        photo = result.scalar_one_or_none()
+        photo = await self.repository.get_photo_by_id(photo_id)
 
         if not photo:
             return None
@@ -38,8 +36,7 @@ class PhotosService:
 
     async def get_photo_file_info(self, photo_id: str):
         """Get photo file information for serving the file."""
-        result = await self.db.execute(select(Photo).where(Photo.id == photo_id))
-        photo = result.scalar_one_or_none()
+        photo = await self.repository.get_photo_by_id(photo_id)
 
         if not photo:
             return None
