@@ -1,6 +1,9 @@
 DOCKER_COMPOSE_CMD := "./docker_compose/docker-compose.sh"
 
-.PHONY: build up up-dev validate-api validate-db validate-frontend ci
+.PHONY: build up up-dev down \
+validate-api validate-db validate-frontend \
+format-api format-api-diff format-db format-db-diff format-all format-all-diff \
+ci
 
 
 ### Docker Compose targets
@@ -27,5 +30,27 @@ validate-db:
 validate-frontend:
 	cd src/frontend && npm run lint
 
-ci: validate-api validate-db validate-frontend
+
+### Formatting targets
+format-api:
+	cd src/pgs_api && uv run make format
+
+format-api-diff:
+	cd src/pgs_api && uv run make format-diff
+
+format-db:
+	cd src/pgs_db && uv run make format
+
+format-db-diff:
+	cd src/pgs_db && uv run make format-diff
+
+format-all: format-api format-db
+	@echo "All code formatted successfully"
+
+format-all-diff: format-api-diff format-db-diff
+	@echo "All code differences formatted successfully"
+
+
+### Continuous Integration target
+ci: validate-api validate-db validate-frontend format-all-diff
 	@echo "Done"
