@@ -23,7 +23,7 @@ def mock_photos_service(mocker):
 
 class TestGetPhotoMetadata:
     @pytest.mark.asyncio
-    async def test_get_photo_metadata_success(self, mock_db, mock_photos_service, mocker):
+    async def test_get_photo_metadata_success(self, mock_db, mock_photos_service, mocker) -> None:
         # Arrange
         photo_id = "photo123"
         expected_photo = {
@@ -55,7 +55,7 @@ class TestGetPhotoMetadata:
         mock_photos_service.get_photo_by_id.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_metadata_not_found(self, mock_db, mock_photos_service, mocker):
+    async def test_get_photo_metadata_not_found(self, mock_db, mock_photos_service, mocker) -> None:
         # Arrange
         photo_id = "nonexistent"
         mock_photos_service.get_photo_by_id = AsyncMock(return_value=None)
@@ -72,7 +72,7 @@ class TestGetPhotoMetadata:
 
 class TestServePhotoFile:
     @pytest.mark.asyncio
-    async def test_serve_photo_file_success(self, mock_db, mock_photos_service, mocker):
+    async def test_serve_photo_file_success(self, mock_db, mock_photos_service, mocker) -> None:
         # Arrange
         photo_id = "photo123"
         test_path = Path("/tmp/test.jpg")
@@ -89,7 +89,7 @@ class TestServePhotoFile:
         mock_photos_service.get_photo_file_info.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_serve_photo_file_photo_not_found(self, mock_db, mock_photos_service, mocker):
+    async def test_serve_photo_file_photo_not_found(self, mock_db, mock_photos_service, mocker) -> None:
         # Arrange
         photo_id = "nonexistent"
         mock_photos_service.get_photo_file_info = AsyncMock(return_value=None)
@@ -104,7 +104,7 @@ class TestServePhotoFile:
         mock_photos_service.get_photo_file_info.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_serve_photo_file_file_not_on_disk(self, mock_db, mock_photos_service, mocker):
+    async def test_serve_photo_file_file_not_on_disk(self, mock_db, mock_photos_service, mocker) -> None:
         # Arrange
         photo_id = "photo123"
         test_path = Path("/tmp/nonexistent.jpg")

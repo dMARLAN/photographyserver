@@ -15,7 +15,7 @@ def mock_db():
 class TestPhotosService:
 
     @pytest.mark.asyncio
-    async def test_get_photo_by_id_success(self, mock_db):
+    async def test_get_photo_by_id_success(self, mock_db) -> None:
         # Arrange
         photo_id = "photo123"
         mock_photo = Mock()
@@ -67,7 +67,7 @@ class TestPhotosService:
             mock_photo.get_display_title.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_photo_by_id_not_found(self, mock_db):
+    async def test_get_photo_by_id_not_found(self, mock_db) -> None:
         # Arrange
         photo_id = "nonexistent"
 
@@ -84,7 +84,7 @@ class TestPhotosService:
             mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_success(self, mock_db):
+    async def test_get_photo_file_info_success(self, mock_db) -> None:
         # Arrange
         photo_id = "photo123"
         test_path = "/photos/test.jpg"
@@ -112,7 +112,7 @@ class TestPhotosService:
                 mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_photo_not_found(self, mock_db):
+    async def test_get_photo_file_info_photo_not_found(self, mock_db) -> None:
         # Arrange
         photo_id = "nonexistent"
 
@@ -129,7 +129,7 @@ class TestPhotosService:
             mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_file_not_exists(self, mock_db):
+    async def test_get_photo_file_info_file_not_exists(self, mock_db) -> None:
         # Arrange
         photo_id = "photo123"
         test_path = "/photos/nonexistent.jpg"
@@ -153,7 +153,7 @@ class TestPhotosService:
                 mock_get_photo.assert_called_once_with(photo_id)
 
     @pytest.mark.asyncio
-    async def test_get_photo_file_info_different_media_types(self, mock_db):
+    async def test_get_photo_file_info_different_media_types(self, mock_db) -> None:
         # Test different file extensions to verify media type mapping
         test_cases = [
             (".jpg", "image/jpeg"),
@@ -194,7 +194,7 @@ class TestPhotosService:
                     assert result["media_type"] == expected_media_type
 
     @pytest.mark.asyncio
-    async def test_file_size_mb_rounding(self, mock_db):
+    async def test_file_size_mb_rounding(self, mock_db) -> None:
         # Arrange
         photo_id = "photo123"
         mock_photo = Mock()

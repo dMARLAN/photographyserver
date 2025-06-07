@@ -21,7 +21,7 @@ def mock_categories_service(mocker):
 
 class TestListCategories:
     @pytest.mark.asyncio
-    async def test_list_categories_success(self, mock_db, mock_categories_service, mocker):
+    async def test_list_categories_success(self, mock_db, mock_categories_service, mocker) -> None:
         # Arrange
         expected_categories = [
             {"name": "nature", "photo_count": 5, "latest_photo": "2024-01-01T00:00:00"},
@@ -38,7 +38,7 @@ class TestListCategories:
         mock_categories_service.list_categories.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_list_categories_empty(self, mock_db, mock_categories_service, mocker):
+    async def test_list_categories_empty(self, mock_db, mock_categories_service, mocker) -> None:
         # Arrange
         mock_categories_service.list_categories = AsyncMock(return_value=[])
         mocker.patch.object(categories_module, "CategoriesService", return_value=mock_categories_service)
@@ -53,7 +53,7 @@ class TestListCategories:
 
 class TestListPhotosInCategory:
     @pytest.mark.asyncio
-    async def test_list_photos_in_category_success(self, mock_db, mock_categories_service, mocker):
+    async def test_list_photos_in_category_success(self, mock_db, mock_categories_service, mocker) -> None:
         category = "nature"
         expected_photos = [
             {
@@ -82,7 +82,7 @@ class TestListPhotosInCategory:
         mock_categories_service.get_photos_in_category.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_list_photos_in_category_not_found(self, mock_db, mock_categories_service, mocker):
+    async def test_list_photos_in_category_not_found(self, mock_db, mock_categories_service, mocker) -> None:
         category = "nonexistent"
         # Arrange
         mock_categories_service.get_photos_in_category = AsyncMock(return_value=None)
@@ -97,7 +97,7 @@ class TestListPhotosInCategory:
         mock_categories_service.get_photos_in_category.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_list_photos_in_category_empty(self, mock_db, mock_categories_service, mocker):
+    async def test_list_photos_in_category_empty(self, mock_db, mock_categories_service, mocker) -> None:
         category = "empty_category"
         # Arrange
         mock_categories_service.get_photos_in_category = AsyncMock(return_value=[])

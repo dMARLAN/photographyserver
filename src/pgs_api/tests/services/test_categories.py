@@ -14,7 +14,7 @@ def mock_db():
 
 class TestCategoriesService:
     @pytest.mark.asyncio
-    async def test_list_categories_success(self, mock_db):
+    async def test_list_categories_success(self, mock_db) -> None:
         # Arrange
         with patch.object(CategoriesRepository, "get_categories_with_stats", new_callable=AsyncMock) as mock_get_stats:
             mock_get_stats.return_value = [
@@ -36,7 +36,7 @@ class TestCategoriesService:
             mock_get_stats.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_list_categories_empty(self, mock_db):
+    async def test_list_categories_empty(self, mock_db) -> None:
         # Arrange
         with patch.object(CategoriesRepository, "get_categories_with_stats", new_callable=AsyncMock) as mock_get_stats:
             mock_get_stats.return_value = []
@@ -51,7 +51,7 @@ class TestCategoriesService:
             mock_get_stats.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_success(self, mock_db):
+    async def test_get_photos_in_category_success(self, mock_db) -> None:
         # Arrange
         category = "nature"
         mock_photo = Mock()
@@ -94,7 +94,7 @@ class TestCategoriesService:
             mock_photo.get_display_title.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_not_found(self, mock_db):
+    async def test_get_photos_in_category_not_found(self, mock_db) -> None:
         # Arrange
         category = "nonexistent"
 
@@ -111,7 +111,7 @@ class TestCategoriesService:
             mock_get_photos.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_empty_list(self, mock_db):
+    async def test_get_photos_in_category_empty_list(self, mock_db) -> None:
         # Arrange
         category = "empty"
 
@@ -128,7 +128,7 @@ class TestCategoriesService:
             mock_get_photos.assert_called_once_with(category)
 
     @pytest.mark.asyncio
-    async def test_get_photos_in_category_multiple_photos(self, mock_db):
+    async def test_get_photos_in_category_multiple_photos(self, mock_db) -> None:
         # Arrange
         category = "nature"
 

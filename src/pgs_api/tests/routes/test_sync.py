@@ -8,7 +8,7 @@ from pgs_api.services.sync import SyncService
 
 
 class MockSyncStats:
-    def __init__(self, files_scanned=0, files_added=0, files_updated=0, files_removed=0, errors=0):
+    def __init__(self, files_scanned=0, files_added=0, files_updated=0, files_removed=0, errors=0) -> None:
         self.files_scanned = files_scanned
         self.files_added = files_added
         self.files_updated = files_updated
@@ -18,7 +18,7 @@ class MockSyncStats:
 
 class TestSyncPhotos:
     @pytest.mark.asyncio
-    async def test_sync_photos_success(self):
+    async def test_sync_photos_success(self) -> None:
         expected_result = {
             "message": "Sync completed successfully",
             "stats": {
@@ -39,7 +39,7 @@ class TestSyncPhotos:
         mock_sync.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_sync_photos_file_not_found_error(self):
+    async def test_sync_photos_file_not_found_error(self) -> None:
         with patch.object(SyncService, "sync_photos", new_callable=AsyncMock) as mock_sync:
             mock_sync.side_effect = FileNotFoundError("Storage path not found")
 
@@ -51,7 +51,7 @@ class TestSyncPhotos:
         mock_sync.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_sync_photos_generic_error(self):
+    async def test_sync_photos_generic_error(self) -> None:
         with patch.object(SyncService, "sync_photos", new_callable=AsyncMock) as mock_sync:
             mock_sync.side_effect = Exception("Database connection failed")
 
@@ -63,7 +63,7 @@ class TestSyncPhotos:
         mock_sync.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_sync_photos_success_with_errors(self):
+    async def test_sync_photos_success_with_errors(self) -> None:
         expected_result = {
             "message": "Sync completed successfully",
             "stats": {

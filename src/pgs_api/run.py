@@ -6,7 +6,7 @@ import uvicorn
 from pgs_api.config import api_config
 
 
-def main():
+def main() -> None:
     """Run the FastAPI server."""
     uvicorn.run(
         "pgs_api.main:app",

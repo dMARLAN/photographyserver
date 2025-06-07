@@ -5,7 +5,7 @@ from pgs_db.models import Photo
 
 
 class PhotosRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     async def get_photo_by_id(self, photo_id: str):

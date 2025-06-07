@@ -6,7 +6,7 @@ from pgs_api.repositories.photos import PhotosRepository
 
 
 class PhotosService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self._repository = PhotosRepository(db)
 
     @staticmethod

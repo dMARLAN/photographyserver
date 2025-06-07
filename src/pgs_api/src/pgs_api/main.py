@@ -86,7 +86,7 @@ def create_app() -> FastAPI:
     return app
 
 
-def include_api_routes(app: FastAPI):
+def include_api_routes(app: FastAPI) -> None:
     """Include all API routes with proper versioning."""
 
     # Include all API v1 route modules

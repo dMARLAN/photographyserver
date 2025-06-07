@@ -5,7 +5,7 @@ from pgs_db.models import Photo
 
 
 class CategoriesRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     async def get_categories_with_stats(self):

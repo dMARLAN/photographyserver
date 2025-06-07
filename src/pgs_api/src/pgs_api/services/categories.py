@@ -4,7 +4,7 @@ from pgs_api.repositories.categories import CategoriesRepository
 
 
 class CategoriesService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self._repository = CategoriesRepository(db)
 
     async def list_categories(self):
