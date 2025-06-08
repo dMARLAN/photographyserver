@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from pgs_sync.types import ImageMetadata
+from pgs_sync.sync_types import ImageMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -25,22 +25,18 @@ def extract_image_metadata(file_path: Path) -> ImageMetadata:
         OSError: If file cannot be accessed
         Exception: If image cannot be processed
     """
-    # Get file stats
     stat = file_path.stat()
     file_size = stat.st_size
     file_modified_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
 
-    width = None
-    height = None
-
-    # Try to extract image dimensions
-    # Some raw formats may not be supported by Pillow
     try:
         with Image.open(file_path) as img:
             width, height = img.size
     except Exception as e:
-        logger.debug(f"Could not extract dimensions from {file_path}: {e}")
+        # Some raw formats may not be supported by Pillow
         # For raw files or unsupported formats, we'll just store None for dimensions
+        logger.debug(f"Could not extract dimensions from {file_path}: {e}")
+        width, height = None, None
 
     return ImageMetadata(file_size=file_size, width=width, height=height, file_modified_at=file_modified_at)
 
@@ -54,22 +50,23 @@ def generate_title_from_filename(filename: str) -> str:
     Returns:
         A cleaned-up title suitable for display
     """
-    # Remove file extension
     name = Path(filename).stem
 
-    # Remove common photo prefixes (IMG_, DSC_, etc.)
-    name = re.sub(r"^(IMG|DSC|DSCN|P|PIC|PHOTO|IMAGE)[-_]?", "", name, flags=re.IGNORECASE)
+    # Remove common photo prefixes (case sensitive - uppercase are camera prefixes)
+    name = re.sub("^(IMG|DSC|DSCN|P|PIC|PHOTO|IMAGE)[-_]", "", name)
 
-    # Remove timestamp patterns (YYYYMMDD, YYYY-MM-DD, etc.)
-    name = re.sub(r"\b\d{4}[-_]?\d{2}[-_]?\d{2}\b", "", name)
-    name = re.sub(r"\b\d{8}\b", "", name)
+    # Remove timestamp patterns that look like dates (YYYYMMDD, YYYY-MM-DD, etc.)
+    # Remove 8-digit date patterns like 20230615
+    name = re.sub(r"[-_]?20\d{6}[-_]?", "_", name)
+    # Remove hyphen/underscore separated date patterns like 2023-06-15 or 2023_06_15
+    name = re.sub(r"[-_]?20\d{2}[-_](0[1-9]|1[0-2])[-_](0[1-9]|[12]\d|3[01])[-_]?", "_", name)
 
-    # Remove time patterns (HHMMSS, HH-MM-SS, etc.)
-    name = re.sub(r"\b\d{2}[-_:]?\d{2}[-_:]?\d{2}\b", "", name)
+    # Remove time patterns that look like HHMMSS (only valid time ranges)
+    name = re.sub(r"[-_]?([01]\d|2[0-3])[-_:]?([0-5]\d)[-_:]?([0-5]\d)[-_]?", "_", name)
 
-    # Remove sequential numbers at start or end
-    name = re.sub(r"^[-_]?\d+[-_]?", "", name)
-    name = re.sub(r"[-_]?\d+[-_]?$", "", name)
+    # Remove sequential numbers at start or end (only if clearly separated)
+    name = re.sub(r"^[-_]?\d{1,4}[-_]", "", name)
+    name = re.sub(r"[-_]\d{1,4}$", "", name)
 
     # Replace underscores and hyphens with spaces
     name = re.sub(r"[-_]+", " ", name)

@@ -9,7 +9,7 @@ import pytest
 
 from pgs_db.models.photos import PLPhoto
 from pgs_sync.sync_engine import SyncEngine
-from pgs_sync.types import FileEvent, FileEventType, ImageMetadata, SyncStats
+from pgs_sync.sync_types import FileEvent, FileEventType, ImageMetadata, SyncStats
 
 
 class TestSyncEngine:
@@ -143,7 +143,7 @@ class TestSyncEngine:
 
         # Mock file exists and metadata extraction
         with (
-            patch.object(event.file_path, "exists", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
             patch.object(sync_engine, "_get_photo_by_path", return_value=None),
             patch("pgs_sync.sync_engine.extract_image_metadata") as mock_extract,
             patch("pgs_sync.sync_engine.generate_title_from_filename", return_value="Beautiful Sunset"),
@@ -174,7 +174,7 @@ class TestSyncEngine:
             timestamp=datetime.now(timezone.utc),
         )
 
-        with patch.object(event.file_path, "exists", return_value=False):
+        with patch("pathlib.Path.exists", return_value=False):
             await sync_engine._handle_file_created(mock_db_session, event)
 
             # Should not add anything to session
@@ -203,7 +203,7 @@ class TestSyncEngine:
         )
 
         with (
-            patch.object(event.file_path, "exists", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
             patch.object(sync_engine, "_get_photo_by_path", return_value=existing_photo),
         ):
 
@@ -218,7 +218,7 @@ class TestSyncEngine:
         """Test handling file modification event."""
         event = FileEvent(
             event_type=FileEventType.MODIFIED,
-            file_path=Path("/test/photos/landscapes/sunset.jpg"),
+            file_path=Path("/test/photos/landscapes/beautiful_sunset.jpg"),
             category="landscapes",
             timestamp=datetime.now(timezone.utc),
         )
@@ -231,7 +231,7 @@ class TestSyncEngine:
             filename="sunset.jpg",
             file_path="/test/photos/landscapes/sunset.jpg",
             category="landscapes",
-            title="Old Sunset",
+            title="Sunset",  # Use the auto-generated title so it gets updated
             file_size=512000,
             width=1280,
             height=720,
@@ -239,10 +239,13 @@ class TestSyncEngine:
         )
 
         with (
-            patch.object(event.file_path, "exists", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
             patch.object(sync_engine, "_get_photo_by_path", return_value=existing_photo),
             patch("pgs_sync.sync_engine.extract_image_metadata") as mock_extract,
-            patch("pgs_sync.sync_engine.generate_title_from_filename", return_value="Updated Sunset"),
+            patch(
+                "pgs_sync.sync_engine.generate_title_from_filename",
+                side_effect=lambda name: "Sunset" if name == "sunset.jpg" else "Beautiful Sunset",
+            ),
         ):
 
             mock_extract.return_value = ImageMetadata(
@@ -256,7 +259,7 @@ class TestSyncEngine:
             assert existing_photo.width == 1920
             assert existing_photo.height == 1080
             assert existing_photo.file_modified_at == new_timestamp
-            assert existing_photo.title == "Updated Sunset"
+            assert existing_photo.title == "Beautiful Sunset"
 
     @pytest.mark.asyncio
     @pytest.mark.unit
@@ -282,7 +285,7 @@ class TestSyncEngine:
         )
 
         with (
-            patch.object(event.file_path, "exists", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
             patch.object(sync_engine, "_get_photo_by_path", return_value=existing_photo),
             patch("pgs_sync.sync_engine.extract_image_metadata") as mock_extract,
         ):

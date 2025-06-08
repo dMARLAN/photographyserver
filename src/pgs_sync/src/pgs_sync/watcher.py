@@ -9,7 +9,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from pgs_sync.config import sync_config
-from pgs_sync.types import FileEvent, FileEventType
+from pgs_sync.sync_types import FileEvent, FileEventType
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +36,15 @@ class PhotoDirectoryEventHandler(FileSystemEventHandler):
         if not event.is_directory and self._is_supported_file(str(event.src_path)):
             self._queue_event(FileEventType.DELETED, str(event.src_path))
 
-    def _is_supported_file(self, file_path: str) -> bool:
+    @staticmethod
+    def _is_supported_file(file_path: str) -> bool:
         """Check if a file is a supported image format."""
         return Path(file_path).suffix.lower() in sync_config.supported_extensions
 
     def _queue_event(self, event_type: FileEventType, file_path: str) -> None:
         """Queue a file event for processing."""
         try:
-            # Convert to Path object for easier manipulation
+            # Convert to a Path object for easier manipulation
             path = Path(file_path)
 
             # Extract category from file path (photos/category/filename.jpg -> category)
@@ -61,7 +62,8 @@ class PhotoDirectoryEventHandler(FileSystemEventHandler):
         except Exception as e:
             logger.error(f"Error queuing file event {event_type.value} for {file_path}: {e}")
 
-    def _extract_category_from_path(self, file_path: Path) -> str:
+    @staticmethod
+    def _extract_category_from_path(file_path: Path) -> str:
         """Extract category name from file path.
 
         Assumes photos are organized as /photos/category/filename.jpg
@@ -73,9 +75,9 @@ class PhotoDirectoryEventHandler(FileSystemEventHandler):
             Category name, or 'uncategorized' if unable to extract
         """
         try:
-            # Try to get relative path from photos base path
+            # Try to get a relative path from the photos base path
             relative_path = file_path.relative_to(sync_config.photos_base_path)
-            # Return first directory component as category
+            # Return the first directory component as category
             return relative_path.parts[0] if relative_path.parts else "uncategorized"
         except ValueError:
             # File is outside the photos base path, use parent directory name
@@ -94,7 +96,6 @@ class PhotoDirectoryWatcher:
     async def start_watching(self) -> None:
         """Start watching the photos directory."""
         logger.info(f"Starting file system watcher for {self.photos_path}")
-        # TODO: Implement actual watching logic
         self.observer.schedule(self.event_handler, str(self.photos_path), recursive=True)
         self.observer.start()
 

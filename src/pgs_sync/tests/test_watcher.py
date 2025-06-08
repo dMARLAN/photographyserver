@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from watchdog.events import FileCreatedEvent, FileDeletedEvent, FileModifiedEvent
 
-from pgs_sync.types import FileEvent, FileEventType
+from pgs_sync.sync_types import FileEvent, FileEventType
 from pgs_sync.watcher import PhotoDirectoryEventHandler, PhotoDirectoryWatcher
 
 

@@ -13,40 +13,42 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pgs_sync.config import SyncConfig
 from pgs_sync.health import HealthMonitor
 from pgs_sync.sync_engine import SyncEngine
-from pgs_sync.types import FileEvent, FileEventType
+from pgs_sync.sync_types import FileEvent, FileEventType, ImageMetadata
 from pgs_sync.utils import extract_image_metadata, generate_title_from_filename
 from pgs_sync.watcher import PhotoDirectoryEventHandler, PhotoDirectoryWatcher
 
 
+@pytest.fixture
+def temp_photos_structure():
+    """Create a temporary photos directory with realistic structure."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        photos_path = Path(temp_dir) / "photos"
+        photos_path.mkdir()
+
+        # Create category directories
+        categories = ["landscapes", "portraits", "events", "nature"]
+        for category in categories:
+            (photos_path / category).mkdir()
+
+        yield photos_path
+
+
+@pytest.fixture
+def integration_config(temp_photos_structure):
+    """Create a config for integration testing."""
+    return SyncConfig(
+        photos_base_path=temp_photos_structure,
+        supported_extensions={".jpg", ".jpeg", ".png", ".gif"},
+        initial_sync_on_startup=False,
+        event_debounce_delay=0.1,  # Fast for testing
+        max_batch_size=5,
+        retry_attempts=2,
+        retry_delay=0.1,
+    )
+
+
 class TestFileSystemEventSimulation:
     """Test file system event simulation and processing."""
-
-    @pytest.fixture
-    def temp_photos_structure(self):
-        """Create a temporary photos directory with realistic structure."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            photos_path = Path(temp_dir) / "photos"
-            photos_path.mkdir()
-
-            # Create category directories
-            categories = ["landscapes", "portraits", "events", "nature"]
-            for category in categories:
-                (photos_path / category).mkdir()
-
-            yield photos_path
-
-    @pytest.fixture
-    def integration_config(self, temp_photos_structure):
-        """Create a config for integration testing."""
-        return SyncConfig(
-            photos_base_path=temp_photos_structure,
-            supported_extensions={".jpg", ".jpeg", ".png", ".gif"},
-            initial_sync_on_startup=False,
-            event_debounce_delay=0.1,  # Fast for testing
-            max_batch_size=5,
-            retry_attempts=2,
-            retry_delay=0.1,
-        )
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -59,7 +61,11 @@ class TestFileSystemEventSimulation:
         mock_session = AsyncMock(spec=AsyncSession)
 
         def mock_session_factory():
-            return mock_session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         # Create components
         sync_engine = SyncEngine(mock_session_factory)
@@ -71,11 +77,14 @@ class TestFileSystemEventSimulation:
         test_image.save(image_path, "JPEG")
 
         # Simulate file creation event
-        with patch.object(sync_engine, "config", integration_config):
+        with (
+            patch.object(sync_engine, "config", integration_config),
+            patch.object(sync_engine, "_get_photo_by_path", return_value=None),
+        ):
             # Queue the event
             event_handler._queue_event(FileEventType.CREATED, str(image_path))
 
-            # Get event from queue
+            # Get event from the queue
             assert not event_queue.empty()
             file_event = event_queue.get()
 
@@ -85,12 +94,11 @@ class TestFileSystemEventSimulation:
             assert file_event.category == "landscapes"
 
             # Process the event
-            with patch("pgs_sync.sync_engine.PLPhoto"):
-                await sync_engine.process_file_event(file_event)
+            await sync_engine.process_file_event(file_event)
 
-                # Verify database interaction
-                mock_session.add.assert_called_once()
-                mock_session.commit.assert_called_once()
+            # Verify database interaction
+            mock_session.add.assert_called_once()
+            mock_session.commit.assert_called_once()
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -102,7 +110,11 @@ class TestFileSystemEventSimulation:
         mock_session = AsyncMock(spec=AsyncSession)
 
         def mock_session_factory():
-            return mock_session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         sync_engine = SyncEngine(mock_session_factory)
         event_handler = PhotoDirectoryEventHandler(event_queue)
@@ -115,7 +127,10 @@ class TestFileSystemEventSimulation:
             test_image.save(image_path, "JPEG")
             image_files.append(image_path)
 
-        with patch.object(sync_engine, "config", integration_config):
+        with (
+            patch.object(sync_engine, "config", integration_config),
+            patch.object(sync_engine, "_get_photo_by_path", return_value=None),
+        ):
             # Queue multiple events
             events = []
             for image_path in image_files:
@@ -123,12 +138,11 @@ class TestFileSystemEventSimulation:
                 events.append(event_queue.get())
 
             # Process batch
-            with patch("pgs_sync.sync_engine.PLPhoto"):
-                await sync_engine.process_event_batch(events)
+            await sync_engine.process_event_batch(events)
 
-                # Should add all photos and commit once
-                assert mock_session.add.call_count == len(image_files)
-                mock_session.commit.assert_called_once()
+            # Should add all photos and commit once
+            assert mock_session.add.call_count == len(image_files)
+            mock_session.commit.assert_called_once()
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -140,7 +154,11 @@ class TestFileSystemEventSimulation:
         mock_session = AsyncMock(spec=AsyncSession)
 
         def mock_session_factory():
-            return mock_session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         # Create existing photo mock
         from pgs_db.models.photos import PLPhoto
@@ -195,7 +213,11 @@ class TestFileSystemEventSimulation:
         mock_session = AsyncMock(spec=AsyncSession)
 
         def mock_session_factory():
-            return mock_session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         # Create existing photo mock
         from pgs_db.models.photos import PLPhoto
@@ -279,7 +301,7 @@ class TestHealthMonitoringIntegration:
         health_monitor = HealthMonitor()
 
         # Simulate some activity
-        from pgs_sync.types import SyncStats, FileEventType
+        from pgs_sync.sync_types import SyncStats, FileEventType
 
         sync_stats = SyncStats(files_scanned=100, files_added=15, files_updated=8, files_removed=3, errors=2)
 
@@ -326,7 +348,7 @@ class TestErrorHandlingAndRecovery:
         # Mock database session that fails first, then succeeds
         call_count = 0
 
-        def create_session():
+        def mock_session_factory():
             nonlocal call_count
             call_count += 1
             session = AsyncMock(spec=AsyncSession)
@@ -338,9 +360,13 @@ class TestErrorHandlingAndRecovery:
                 # Subsequent attempts succeed
                 session.commit.side_effect = None
 
-            return session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
-        sync_engine = SyncEngine(create_session)
+        sync_engine = SyncEngine(mock_session_factory)
 
         # Create test event
         event = FileEvent(
@@ -353,8 +379,13 @@ class TestErrorHandlingAndRecovery:
         with (
             patch.object(sync_engine, "config", integration_config),
             patch.object(sync_engine, "_is_supported_file", return_value=True),
-            patch.object(sync_engine, "_handle_file_created", new_callable=AsyncMock),
+            patch.object(sync_engine, "_get_photo_by_path", return_value=None),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pgs_sync.sync_engine.extract_image_metadata") as mock_extract,
         ):
+            mock_extract.return_value = ImageMetadata(
+                file_size=1024, width=800, height=600, file_modified_at=datetime.now(timezone.utc)
+            )
 
             # First attempt should fail
             with pytest.raises(Exception, match="Database connection lost"):
@@ -372,7 +403,11 @@ class TestErrorHandlingAndRecovery:
         mock_session = AsyncMock(spec=AsyncSession)
 
         def mock_session_factory():
-            return mock_session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         sync_engine = SyncEngine(mock_session_factory)
         event_handler = PhotoDirectoryEventHandler(event_queue)
@@ -399,7 +434,11 @@ class TestErrorHandlingAndRecovery:
         mock_session = AsyncMock(spec=AsyncSession)
 
         def mock_session_factory():
-            return mock_session
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         sync_engine = SyncEngine(mock_session_factory)
         event_handler = PhotoDirectoryEventHandler(event_queue)
@@ -415,7 +454,16 @@ class TestErrorHandlingAndRecovery:
             test_image.save(image_path, "JPEG")
             image_files.append(image_path)
 
-        with patch.object(sync_engine, "config", integration_config):
+        with (
+            patch.object(sync_engine, "config", integration_config),
+            patch.object(sync_engine, "_get_photo_by_path", return_value=None),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pgs_sync.sync_engine.extract_image_metadata") as mock_extract,
+        ):
+            mock_extract.return_value = ImageMetadata(
+                file_size=1024, width=100, height=100, file_modified_at=datetime.now(timezone.utc)
+            )
+
             # Queue all events
             events = []
             for image_path in image_files:
@@ -424,13 +472,12 @@ class TestErrorHandlingAndRecovery:
 
             # Process in batches
             batch_size = 10
-            with patch("pgs_sync.sync_engine.PLPhoto"):
-                for i in range(0, len(events), batch_size):
-                    batch = events[i : i + batch_size]
-                    await sync_engine.process_event_batch(batch)
+            for i in range(0, len(events), batch_size):
+                batch = events[i : i + batch_size]
+                await sync_engine.process_event_batch(batch)
 
-                # Verify all events were processed
-                assert mock_session.add.call_count == num_files
+            # Verify all events were processed
+            assert mock_session.add.call_count == num_files
 
 
 class TestComponentInteraction:
@@ -446,7 +493,13 @@ class TestComponentInteraction:
         watcher = PhotoDirectoryWatcher(temp_photos_structure, event_queue)
 
         mock_session = AsyncMock(spec=AsyncSession)
-        mock_session_factory = lambda: mock_session  # noqa: E731
+
+        def mock_session_factory():
+            # Create an async context manager that returns the mock session
+            async_context = AsyncMock()
+            async_context.__aenter__ = AsyncMock(return_value=mock_session)
+            async_context.__aexit__ = AsyncMock(return_value=None)
+            return async_context
 
         config = SyncConfig(
             photos_base_path=temp_photos_structure,
@@ -461,7 +514,16 @@ class TestComponentInteraction:
         test_image = Image.new("RGB", (200, 200), color="purple")
         test_image.save(image_path, "JPEG")
 
-        with patch.object(sync_engine, "config", config):
+        with (
+            patch.object(sync_engine, "config", config),
+            patch.object(sync_engine, "_get_photo_by_path", return_value=None),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pgs_sync.sync_engine.extract_image_metadata") as mock_extract,
+        ):
+            mock_extract.return_value = ImageMetadata(
+                file_size=1024, width=200, height=200, file_modified_at=datetime.now(timezone.utc)
+            )
+
             # Simulate watcher detecting the file
             watcher.event_handler._queue_event(FileEventType.CREATED, str(image_path))
 
@@ -505,7 +567,7 @@ class TestComponentInteraction:
     async def test_utility_functions_integration(self, temp_photos_structure):
         """Test integration of utility functions with real files."""
         # Create test image with specific properties
-        image_path = temp_photos_structure / "portraits" / "IMG_20230615_142530.jpg"
+        image_path = temp_photos_structure / "portraits" / "IMG_20230615_sunset_beach.jpg"
         test_image = Image.new("RGB", (1920, 1080), color="yellow")
         test_image.save(image_path, "JPEG")
 
@@ -522,3 +584,6 @@ class TestComponentInteraction:
         assert "IMG" not in title
         assert "2023" not in title
         assert title != ""
+        # Should contain the descriptive parts
+        assert "Sunset" in title
+        assert "Beach" in title

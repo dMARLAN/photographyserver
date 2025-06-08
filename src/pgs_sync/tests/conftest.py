@@ -12,7 +12,7 @@ from PIL import Image
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pgs_sync.config import SyncConfig
-from pgs_sync.types import FileEvent, FileEventType, ImageMetadata, SyncStats
+from pgs_sync.sync_types import FileEvent, FileEventType, ImageMetadata, SyncStats
 
 
 @pytest.fixture
@@ -133,7 +133,11 @@ def mock_db_session_factory(mock_db_session: AsyncMock):
     """Create a mock database session factory for testing."""
 
     def factory():
-        return mock_db_session
+        # Create an async context manager that returns the mock session
+        async_context = AsyncMock()
+        async_context.__aenter__ = AsyncMock(return_value=mock_db_session)
+        async_context.__aexit__ = AsyncMock(return_value=None)
+        return async_context
 
     return factory
 

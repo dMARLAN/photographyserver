@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pgs_sync.types import ImageMetadata
+from pgs_sync.sync_types import ImageMetadata
 from pgs_sync.utils import (
     extract_image_metadata,
     generate_title_from_filename,

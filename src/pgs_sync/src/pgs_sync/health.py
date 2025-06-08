@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from pgs_db.database import DatabaseManager
-from pgs_sync.types import FileEventType, SyncStats
+from pgs_sync.sync_types import FileEventType, SyncStats
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ import pytest
 from PIL import Image
 
 from pgs_sync.sync_engine import SyncEngine
-from pgs_sync.types import FileEvent, FileEventType
+from pgs_sync.sync_types import FileEvent, FileEventType
 from pgs_sync.utils import extract_image_metadata, generate_title_from_filename
 from pgs_sync.watcher import PhotoDirectoryEventHandler
 
@@ -193,10 +193,15 @@ class TestLoadTesting:
     @pytest.mark.asyncio
     async def test_large_file_metadata_extraction(self, temp_photos_dir):
         """Test metadata extraction from large files."""
-        # Create a large test image
+        # Create a large test image with noise to make it less compressible
         large_image_path = temp_photos_dir / "large_image.jpg"
-        large_image = Image.new("RGB", (4000, 3000), color="red")  # 12MP image
-        large_image.save(large_image_path, "JPEG", quality=95)
+        import random
+
+        large_image = Image.new("RGB", (6000, 4000))
+        # Fill with random colors to make it harder to compress
+        pixels = [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in range(6000 * 4000)]
+        large_image.putdata(pixels)
+        large_image.save(large_image_path, "JPEG", quality=98)
 
         # Time metadata extraction
         start_time = time.time()
@@ -205,8 +210,8 @@ class TestLoadTesting:
 
         # Should extract metadata quickly even for large files (under 1 second)
         assert extraction_time < 1.0
-        assert metadata.width == 4000
-        assert metadata.height == 3000
+        assert metadata.width == 6000
+        assert metadata.height == 4000
         assert metadata.file_size > 1024 * 1024  # Should be at least 1MB
 
     @pytest.mark.slow
@@ -365,4 +370,6 @@ class TestScalabilityLimits:
         for title in titles[:8]:  # Check the first few
             assert isinstance(title, str)
             assert len(title) > 0
-            assert title[0].isupper()  # Should be capitalized
+            # Should be properly capitalized (first character is upper if it's a letter)
+            if title[0].isalpha():
+                assert title[0].isupper()

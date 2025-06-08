@@ -2,17 +2,17 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum, auto
 from pathlib import Path
 
 
-class FileEventType(Enum):
+class FileEventType(StrEnum):
     """Types of file system events."""
 
-    CREATED = "created"
-    MODIFIED = "modified"
-    DELETED = "deleted"
-    MOVED = "moved"
+    CREATED = auto()
+    MODIFIED = auto()
+    DELETED = auto()
+    MOVED = auto()
 
 
 @dataclass(frozen=True)

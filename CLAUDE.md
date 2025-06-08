@@ -20,6 +20,7 @@
 # Python
 
 - All Python code is using Python 3.12+
+- Prefer using dataclasses or Pydantic models for structured data (avoid using dicts, tuples, etc. whenever possible)
 - When adding dependencies use `uv add dep-name` do not manually configure the `pyproject.toml` file.
     - You will need to `cd` into the appropriate directory first, e.g. `cd src/db` or `cd src/api`.
 - When running Python code use `uv run` command, e.g. `uv run src/api/src/main.py`.

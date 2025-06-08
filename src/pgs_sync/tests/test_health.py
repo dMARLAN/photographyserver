@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pgs_sync.health import HealthMonitor
-from pgs_sync.types import FileEventType, SyncStats
+from pgs_sync.sync_types import FileEventType, SyncStats
 
 
 class TestHealthMonitor:

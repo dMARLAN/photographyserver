@@ -8,13 +8,13 @@ from datetime import datetime, timezone
 from queue import Empty, Queue
 from types import FrameType
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession  # type: ignore[import-untyped]
 
 from pgs_db.database import db_manager
 from pgs_sync.config import sync_config
 from pgs_sync.health import HealthMonitor
 from pgs_sync.sync_engine import SyncEngine
-from pgs_sync.types import FileEvent
+from pgs_sync.sync_types import FileEvent
 from pgs_sync.watcher import PhotoDirectoryWatcher
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,6 @@ class SyncWorker:
         self.running = True
 
         try:
-            # Perform initial sync if configured
             if self.config.initial_sync_on_startup:
                 logger.info("Performing initial sync on startup")
                 start_time = time.time()
@@ -74,22 +73,14 @@ class SyncWorker:
                     last_full_sync=datetime.now(timezone.utc),
                 )
 
-            # Start file system watcher
             await self.watcher.start_watching()
 
-            # Set watcher observer in health monitor after it's started
             self.health_monitor.set_watcher_observer(self.watcher.observer)
 
-            # Start health monitoring server
             health_task = asyncio.create_task(self._start_health_server())
-
-            # Start event processing loop
             event_task = asyncio.create_task(self._process_events())
-
-            # Start periodic sync task
             periodic_task = asyncio.create_task(self._periodic_sync())
 
-            # Wait for all tasks to complete or shutdown signal
             await asyncio.gather(health_task, event_task, periodic_task, return_exceptions=True)
 
         except Exception as e:
@@ -102,7 +93,6 @@ class SyncWorker:
         logger.info("Shutting down sync worker")
         self.running = False
 
-        # Stop file system watcher
         await self.watcher.stop_watching()
 
         logger.info("Sync worker shutdown complete")
@@ -126,20 +116,16 @@ class SyncWorker:
 
         while self.running:
             try:
-                # Collect events into batches for efficient processing
                 events_batch = await self._collect_event_batch()
 
                 if not events_batch:
-                    # No events collected, sleep briefly to avoid busy waiting
                     await asyncio.sleep(0.1)
                     continue
 
-                # Process the batch with retry logic
                 await self._process_event_batch_with_retry(events_batch)
 
             except Exception as e:
                 logger.error(f"Error in event processing loop: {e}")
-                # Sleep to prevent rapid error cycling
                 await asyncio.sleep(1)
 
     async def _collect_event_batch(self) -> list[FileEvent]:

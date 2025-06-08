@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from pgs_sync.types import FileEvent, FileEventType, SyncStats
+from pgs_sync.sync_types import FileEvent, FileEventType, SyncStats
 from pgs_sync.worker import SyncWorker
 
 
@@ -95,8 +95,14 @@ class TestSyncWorker:
     @pytest.mark.unit
     def test_get_db_session(self, sync_worker: SyncWorker, mock_dependencies):
         """Test getting database session."""
+        # Call the method to get a session
+        session = sync_worker._get_db_session()
+
         # Should call the session factory
         mock_dependencies["db_manager"].session_factory.assert_called_once()
+
+        # Should return the session
+        assert session == mock_dependencies["db_manager"].session_factory()
 
     @pytest.mark.unit
     def test_setup_signal_handlers(self, sync_worker: SyncWorker):
@@ -384,8 +390,8 @@ class TestSyncWorker:
         async def mock_sleep(_):
             nonlocal call_count
             call_count += 1
-            if call_count >= 1:
-                sync_worker.running = False  # Stop after first iteration
+            if call_count >= 2:
+                sync_worker.running = False  # Stop after second sleep call
 
         with patch("asyncio.sleep", side_effect=mock_sleep):
             await sync_worker._periodic_sync()
