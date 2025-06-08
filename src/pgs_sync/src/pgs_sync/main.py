@@ -3,6 +3,7 @@
 import asyncio
 import logging
 
+from pgs_db.database import db_manager
 from pgs_sync.config import sync_config
 from pgs_sync.worker import SyncWorker
 
@@ -24,9 +25,6 @@ async def main() -> None:
     logger.info("Starting PGS Sync Worker")
     logger.info(f"Photos directory: {sync_config.photos_base_path}")
     logger.info(f"Health check port: {sync_config.health_check_port}")
-
-    # Initialize database manager
-    from pgs_db.database import db_manager
 
     db_manager.initialize()
 
