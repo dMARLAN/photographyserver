@@ -5,6 +5,7 @@
 - Remember to read this guide when making LLM calls
 - When finished making changes, make sure to run `make ci` to validate the changes, and fix any issues before you
   finish.
+  - Make sure to run `make ci` in the root directory of the project.
 - If you need to launch the application use `make up-dev`.
 
 # Docker

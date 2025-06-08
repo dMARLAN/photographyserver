@@ -4,7 +4,6 @@ import asyncio
 import logging
 import signal
 import time
-from datetime import datetime, timezone
 from queue import Empty, Queue
 from types import FrameType
 
@@ -30,12 +29,8 @@ class SyncWorker:
         self.watcher = PhotoDirectoryWatcher(self.config.photos_base_path, self.event_queue)
         self.sync_engine = SyncEngine(self._get_db_session)
 
-        # Initialize health monitor with dependencies
-        self.health_monitor = HealthMonitor(
-            db_manager=self.db_manager,
-            watcher_observer=None,  # Will be set after watcher is started
-            get_queue_size=lambda: self.event_queue.qsize(),
-        )
+        # Initialize health monitor
+        self.health_monitor = HealthMonitor()
 
         self.running = False
         self._setup_signal_handlers()
@@ -62,20 +57,9 @@ class SyncWorker:
         try:
             if self.config.initial_sync_on_startup:
                 logger.info("Performing initial sync on startup")
-                start_time = time.time()
-                sync_stats = await self.sync_engine.perform_initial_sync()
-                processing_time_ms = (time.time() - start_time) * 1000
-
-                # Update health monitor with initial sync statistics
-                self.health_monitor.update_stats(
-                    sync_stats=sync_stats,
-                    processing_time_ms=processing_time_ms,
-                    last_full_sync=datetime.now(timezone.utc),
-                )
+                await self.sync_engine.perform_initial_sync()
 
             await self.watcher.start_watching()
-
-            self.health_monitor.set_watcher_observer(self.watcher.observer)
 
             health_task = asyncio.create_task(self._start_health_server())
             event_task = asyncio.create_task(self._process_events())
@@ -150,7 +134,7 @@ class SyncWorker:
                 events_batch.append(event)
                 self.event_queue.task_done()
 
-                # If this is the first event in the batch, apply debounce delay
+                # If this is the first event in the batch, apply to debounce delay
                 if len(events_batch) == 1:
                     await asyncio.sleep(self.config.event_debounce_delay)
 
@@ -158,7 +142,7 @@ class SyncWorker:
                 # No more events available, break if we have some events
                 if events_batch:
                     break
-                # Otherwise continue waiting for events
+                # Otherwise, continue waiting for events
                 continue
 
         if events_batch:
@@ -183,17 +167,6 @@ class SyncWorker:
                 # Calculate processing time
                 processing_time_ms = (time.time() - start_time) * 1000
 
-                # Extract event types for daily statistics
-                event_types = [event.event_type for event in events]
-
-                # Update statistics on successful processing
-                self.health_monitor.update_stats(
-                    processed_events=len(events),
-                    last_sync=datetime.now(timezone.utc),
-                    processing_time_ms=processing_time_ms,
-                    event_types=event_types,
-                )
-
                 logger.info(f"Successfully processed batch of {len(events)} events in {processing_time_ms:.1f}ms")
                 return
 
@@ -210,9 +183,6 @@ class SyncWorker:
                 else:
                     logger.error(f"Failed to process event batch after {self.config.retry_attempts} attempts: {e}")
 
-        # Update statistics for failed processing
-        self.health_monitor.update_stats(failed_events=len(events))
-
         # Re-raise the last exception after all retries failed
         if last_exception:
             raise last_exception
@@ -225,15 +195,7 @@ class SyncWorker:
             try:
                 await asyncio.sleep(self.config.periodic_sync_interval)
                 if self.running:
-                    start_time = time.time()
-                    sync_stats = await self.sync_engine.perform_periodic_sync()
-                    processing_time_ms = (time.time() - start_time) * 1000
+                    await self.sync_engine.perform_periodic_sync()
 
-                    # Update health monitor with periodic sync statistics
-                    self.health_monitor.update_stats(
-                        sync_stats=sync_stats,
-                        processing_time_ms=processing_time_ms,
-                        last_full_sync=datetime.now(timezone.utc),
-                    )
             except Exception as e:
                 logger.error(f"Error in periodic sync: {e}")

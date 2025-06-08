@@ -53,8 +53,6 @@ class TestSyncWorker:
             mock_engine_class.return_value = mock_engine
 
             mock_health = MagicMock()
-            mock_health.update_stats = MagicMock()
-            mock_health.set_watcher_observer = MagicMock()
             mock_health.get_app = MagicMock()
             mock_health_class.return_value = mock_health
 
@@ -156,9 +154,6 @@ class TestSyncWorker:
 
             # Initial sync should be performed
             mocks["engine"].perform_initial_sync.assert_called_once()
-
-            # Health monitor should be updated with stats
-            mocks["health"].update_stats.assert_called()
 
             # Watcher should be started
             mocks["watcher"].start_watching.assert_called_once()
@@ -311,9 +306,6 @@ class TestSyncWorker:
         # Should process the batch
         mocks["engine"].process_event_batch.assert_called_once_with(events)
 
-        # Should update health monitor
-        mocks["health"].update_stats.assert_called()
-
     @pytest.mark.asyncio
     @pytest.mark.unit
     async def test_process_event_batch_with_retry_failure(self, sync_worker: SyncWorker, mock_dependencies):
@@ -334,14 +326,6 @@ class TestSyncWorker:
 
             # Should retry the configured number of times
             assert mocks["engine"].process_event_batch.call_count == 2
-
-            # Should update health monitor with failed events
-            failed_call_found = False
-            for call in mocks["health"].update_stats.call_args_list:
-                if "failed_events" in call[1]:
-                    failed_call_found = True
-                    break
-            assert failed_call_found
 
     @pytest.mark.asyncio
     @pytest.mark.unit
@@ -398,9 +382,6 @@ class TestSyncWorker:
 
             # Periodic sync should be performed
             mocks["engine"].perform_periodic_sync.assert_called_once()
-
-            # Health monitor should be updated
-            mocks["health"].update_stats.assert_called()
 
     @pytest.mark.asyncio
     @pytest.mark.unit
@@ -466,12 +447,5 @@ class TestSyncWorker:
         """Test that health monitor is configured correctly."""
         mocks = mock_dependencies
 
-        # Health monitor should be initialized with correct parameters
-        health_call = mocks["health_class"].call_args
-        assert health_call[1]["db_manager"] == mocks["db_manager"]
-        assert health_call[1]["get_queue_size"] is not None
-
-        # Queue size callback should work
-        callback = health_call[1]["get_queue_size"]
-        size = callback()
-        assert isinstance(size, int)
+        # Health monitor should be initialized
+        mocks["health_class"].assert_called_once()
