@@ -1,12 +1,9 @@
 services:
   frontend:
     build:
-      context: ../src/frontend
+      context: ../src/pgs_frontend
       dockerfile: Dockerfile
     container_name: pgs_frontend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
-      - API_URL=http://api:8000
     ports:
       - "3000:3000"
     volumes:
@@ -17,14 +14,14 @@ services:
     develop:
       watch:
         - action: sync
-          path: ../src/frontend/src
-          target: /app/src
+          path: ../src/pgs_frontend/app
+          target: /app/app
         - action: sync
-          path: ../src/frontend/public
+          path: ../src/pgs_frontend/public
           target: /app/public
         - action: rebuild
-          path: ../src/frontend/package.json
+          path: ../src/pgs_frontend/package.json
         - action: rebuild
-          path: ../src/frontend/package-lock.json
+          path: ../src/pgs_frontend/package-lock.json
         - action: rebuild
-          path: ../src/frontend/next.config.ts
+          path: ../src/pgs_frontend/next.config.ts
