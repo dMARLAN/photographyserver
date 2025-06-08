@@ -71,7 +71,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
     # Health check endpoint
-    @app.get("/healthcheck")
+    @app.get("/health")
     async def health_check() -> dict[str, str]:
         """Health check endpoint to verify API and database connectivity."""
         db_health = await db_manager.health_check()

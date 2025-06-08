@@ -19,7 +19,7 @@ class HealthMonitor:
     def _setup_routes(self) -> None:
         """Set up health check endpoint."""
 
-        @self.app.get("/healthcheck")
+        @self.app.get("/health")
         async def health_check() -> JSONResponse:
             """Basic health check endpoint."""
             return JSONResponse(content={"status": "healthy"})

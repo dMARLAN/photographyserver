@@ -90,6 +90,7 @@ class SyncWorker:
             host=self.config.health_check_host,
             port=self.config.health_check_port,
             log_level=self.config.log_level.lower(),
+            access_log=self.config.access_log,
         )
         server = uvicorn.Server(config)
         await server.serve()

@@ -14,11 +14,20 @@ services:
     develop:
       watch:
         - action: sync
-          path: ../src/pgs_frontend/app
-          target: /app/app
+          path: ../src/pgs_frontend/src
+          target: /app/src
         - action: sync
           path: ../src/pgs_frontend/public
           target: /app/public
+        - action: sync
+          path: ../src/pgs_frontend/tailwind.config.ts
+          target: /app/tailwind.config.ts
+        - action: sync
+          path: ../src/pgs_frontend/tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync
+          path: ../src/pgs_frontend/postcss.config.mjs
+          target: /app/postcss.config.mjs
         - action: rebuild
           path: ../src/pgs_frontend/package.json
         - action: rebuild

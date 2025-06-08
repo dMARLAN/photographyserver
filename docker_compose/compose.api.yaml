@@ -21,7 +21,7 @@ services:
     command: [ "uv", "run", "run.py" ]
     working_dir: /app/src/pgs_api
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/healthcheck" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 60s
       timeout: 10s
       retries: 5

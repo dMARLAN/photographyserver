@@ -51,6 +51,7 @@ class SyncConfig(BaseSettings):
     health_check_port: int = 8001
     health_check_host: str = "0.0.0.0"
     log_level: str = "INFO"
+    access_log: bool = True
 
 
 # Global configuration instance

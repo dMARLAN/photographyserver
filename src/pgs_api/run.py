@@ -8,13 +8,18 @@ from pgs_api.config import api_config
 
 def main() -> None:
     """Run the FastAPI server."""
+    import logging
+    
+    # Configure uvicorn access logger
+    logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+    
     uvicorn.run(
         "pgs_api.main:app",
         host=api_config.host,
         port=api_config.port,
         reload=api_config.reload,
         workers=api_config.workers if not api_config.reload else None,
-        access_log=api_config.enable_access_logs,
+        access_log=True,
         log_level=api_config.log_level.lower(),
     )
 

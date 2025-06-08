@@ -28,7 +28,7 @@ services:
     working_dir: /app/src/pgs_sync
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/healthcheck"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 60s
       timeout: 10s
       retries: 3
