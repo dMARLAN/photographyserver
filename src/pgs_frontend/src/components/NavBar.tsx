@@ -8,7 +8,7 @@ export default function NavBar() {
   const pathname = usePathname();
   
   return (
-    <nav className="w-full border-b bg-white">
+    <nav className="w-full border-b bg-white relative z-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
